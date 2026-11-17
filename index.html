@@ -1,0 +1,2836 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0F19" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="OddsEdge IA" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="format-detection" content="telephone=no" />
+  <link id="apple-touch-icon-link" rel="apple-touch-icon" sizes="180x180" />
+  <link id="pwa-manifest-link" rel="manifest" />
+  <title>OddsEdge IA — Analyse Prédictive & Probabilités Sportives</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#0B0F19',
+            surface: '#131A2B',
+            surfaceHover: '#1A233A',
+            emeraldEdge: '#22D3EE',
+            amberSteam: '#FBBF24',
+            sharpViolet: '#818CF8',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    /* overflow sur html seulement : garde le header "sticky" fonctionnel sur Safari iOS */
+    html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+    html.modal-open { overflow: hidden; }
+    body { max-width: 100%; overflow-x: clip; }
+    body {
+      min-height: 100dvh;
+      background: radial-gradient(circle at 15% 0%, #151E36 0%, #0B0F19 48%, #080B13 100%);
+      background-color: #0B0F19;
+      color: #F8FAFC;
+      font-family: 'Inter', system-ui, sans-serif;
+      overscroll-behavior-y: none;
+      -webkit-text-size-adjust: 100%;
+    }
+    /* Safe Areas iPhone 15 / Dynamic Island */
+    .ios-safe-top {
+      padding-top: max(env(safe-area-inset-top, 0px), 8px);
+    }
+    .ios-safe-bottom {
+      padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    }
+    .ios-main-pad {
+      padding-bottom: calc(6.2rem + env(safe-area-inset-bottom, 0px));
+    }
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+    @media (min-width: 640px) {
+      input, select, textarea {
+        font-size: 12px !important;
+      }
+    }
+    button, a, [onclick], select, label { touch-action: manipulation; }
+    button, [onclick] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    /* Lisibilité iPhone : pas de texte sous 11 px */
+    .text-\[9px\] { font-size: 10.5px !important; }
+    .text-\[10px\] { font-size: 11px !important; }
+    /* Zones tactiles >= 40-44 px (Apple HIG) */
+    @media (pointer: coarse) {
+      .league-pill, .sort-pill, .target-odd-btn, .combo-stake-btn, .btn-tap { min-height: 40px; display: inline-flex; align-items: center; }
+      .combo-prof-btn { min-height: 44px; }
+      .nav-btn { min-height: 48px; }
+    }
+    /* Feuilles modales : safe-area basse + scroll contenu */
+    [id$="-modal"] > div { padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .glass-card {
+      background: linear-gradient(165deg, rgba(23, 32, 54, 0.88) 0%, rgba(16, 22, 38, 0.95) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 10px 30px -12px rgba(2, 6, 23, 0.65);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes pulseAmber {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.35); }
+      50% { box-shadow: 0 0 0 5px rgba(251, 191, 36, 0); }
+    }
+    .steam-pulse { animation: pulseAmber 2s infinite; }
+    input[type="range"] { accent-color: #22D3EE; }
+    .tab-fade { animation: fadeUp 0.2s ease-out; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="flex flex-col selection:bg-cyan-500/30 selection:text-cyan-100">
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-box" style="top: calc(0.75rem + env(safe-area-inset-top, 0px));" class="fixed right-3 left-3 sm:left-auto sm:right-4 z-[90] sm:max-w-sm pointer-events-none transition-all duration-300 opacity-0 -translate-y-4">
+    <div class="glass-card rounded-2xl px-3.5 py-3 shadow-2xl border-cyan-400/45 flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <div class="min-w-0 flex-1">
+        <p id="toast-title" class="text-xs font-bold text-white truncate">Notification</p>
+        <p id="toast-desc" class="text-[11px] text-slate-300 line-clamp-2 leading-tight">Action terminée.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANNIÈRE D'ALERTE EN DIRECT SUR LES MATCHS SUIVIS (★) -->
+  <div id="pinned-live-alert" class="hidden bg-gradient-to-r from-amber-500/20 via-indigo-500/20 to-cyan-500/20 border-b border-amber-400/40">
+    <div class="max-w-[1440px] mx-auto px-3.5 sm:px-6 py-2 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="px-1.5 py-0.5 rounded-md bg-amber-400 text-obsidian font-mono font-extrabold text-[9px] shrink-0">★ SUIVI</span>
+        <p id="pinned-live-alert-text" class="text-[11px] font-semibold text-white truncate">Bascule détectée.</p>
+      </div>
+      <button onclick="dismissPinnedAlert()" class="px-2 py-1 rounded-lg bg-white/10 text-[11px] font-bold text-slate-200 shrink-0">OK</button>
+    </div>
+  </div>
+
+  <!-- EN-TÊTE OPTIMISÉ IPHONE 15 (393px SANS CHEVAUCHEMENT) -->
+  <header class="ios-safe-top sticky top-0 z-40 bg-[#0B0F19]/92 backdrop-blur-xl border-b border-slate-400/[0.12]">
+    <div class="max-w-[1440px] mx-auto px-3 sm:px-6 min-h-[56px] py-1.5 flex items-center justify-between gap-1.5">
+      <!-- Identité -->
+      <div class="flex items-center gap-2 min-w-0 flex-1">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-400 via-indigo-500 to-fuchsia-500 p-[1.5px] shrink-0">
+          <div class="w-full h-full bg-[#0B0F19] rounded-[10px] sm:rounded-[14px] flex items-center justify-center">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M17 7h4v4"/>
+            </svg>
+          </div>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[13px] sm:text-base font-extrabold tracking-tight text-white truncate">OddsEdge <span class="bg-gradient-to-r from-cyan-300 to-indigo-400 bg-clip-text text-transparent">IA</span></span>
+            <span id="ai-gen-badge" class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-indigo-500/20 text-indigo-200 border border-indigo-400/35 shrink-0">GEN #1</span>
+          </div>
+          <button onclick="openFeedModal()" class="flex items-center gap-1 text-[10px] sm:text-[11px] text-slate-300 hover:text-cyan-300 transition text-left max-w-full">
+            <span id="live-status-dot" class="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+            <span id="live-feed-pill-text" class="truncate font-mono">Connexion aux flux...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Desktop -->
+      <nav class="hidden lg:flex items-center gap-1 bg-white/[0.04] p-1 rounded-2xl border border-white/[0.08]">
+        <button onclick="switchTab('matches')" data-nav="matches" class="nav-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition">
+          <span>Matchs & Cotes Réelles</span>
+        </button>
+        <button onclick="switchTab('sgp')" data-nav="sgp" class="nav-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition">
+          <span>Combinés & Kelly</span>
+        </button>
+        <button onclick="switchTab('poisson')" data-nav="poisson" class="nav-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition">
+          <span>Labo Poisson xG</span>
+        </button>
+        <button onclick="switchTab('accuracy')" data-nav="accuracy" class="nav-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition">
+          <span>Audit & Calibration</span>
+        </button>
+      </nav>
+
+      <!-- Contrôles Droite -->
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <button onclick="syncLiveFeeds(true)" id="sync-now-btn" class="h-9 px-2 sm:px-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-[11px] font-bold text-slate-200 flex items-center gap-1 transition" title="Actualiser">
+          <svg id="sync-spin-icon" class="w-3.5 h-3.5 text-cyan-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span id="sync-countdown" class="font-mono text-[10px] text-cyan-300">60s</span>
+        </button>
+
+        <button onclick="openFeedModal()" class="h-9 w-9 sm:w-auto sm:px-2.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/35 text-xs font-bold text-indigo-200 flex items-center justify-center gap-1 transition" title="Sources API">
+          <span>🔌</span>
+          <span class="hidden sm:inline">API</span>
+        </button>
+
+        <button onclick="openGlossaryModal()" class="h-9 w-9 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-semibold text-slate-200 flex items-center justify-center transition" title="Méthodologie">
+          <span class="w-4 h-4 rounded-full bg-cyan-500/25 text-cyan-200 font-mono font-bold text-[10px] flex items-center justify-center">?</span>
+        </button>
+
+        <button onclick="toggleExperienceMode()" id="mode-toggle-btn" class="h-9 px-2 sm:px-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-xs font-bold text-cyan-200 flex items-center gap-1.5 transition" title="Afficher / Masquer les cotes">
+          <span id="mode-dot" class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
+          <span id="mode-label" class="hidden sm:inline">Lecture Simple</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- WORKSPACE PRINCIPAL -->
+  <div class="ios-main-pad flex-1 max-w-[1440px] w-full mx-auto px-3 sm:px-6 py-3.5 sm:py-6 flex flex-col lg:flex-row gap-4 lg:gap-5 lg:pb-8">
+    
+    <!-- COLONNE PRINCIPALE -->
+    <main class="flex-1 min-w-0">
+
+      <!-- ========================================================= -->
+      <!-- ONGLET 1 : MATCHS & PROBABILITÉS RÉELLES                  -->
+      <!-- ========================================================= -->
+      <section id="view-matches" class="tab-fade space-y-3.5">
+        <!-- Indicateurs Clés -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+          <div class="glass-card rounded-2xl p-3 border-cyan-400/25 min-w-0">
+            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">Favoris Nets</span>
+            <p id="kpi-high-conf" class="text-lg sm:text-2xl font-mono font-extrabold text-cyan-300 mt-0.5">0</p>
+            <span class="text-[10px] text-slate-400 block truncate">Probabilité ≥ 58 %</span>
+          </div>
+          <div class="glass-card rounded-2xl p-3 min-w-0">
+            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">Mouvements & Pièges</span>
+            <p id="kpi-steam-count" class="text-lg sm:text-2xl font-mono font-extrabold text-amber-300 mt-0.5">0</p>
+            <span class="text-[10px] text-slate-400 block truncate">Variations détectées</span>
+          </div>
+          <div class="glass-card rounded-2xl p-3 border-amber-400/25 min-w-0">
+            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-400 block truncate">⭐ Écarts Positifs</span>
+            <p id="kpi-value-count" class="text-lg sm:text-2xl font-mono font-extrabold text-amber-300 mt-0.5">0</p>
+            <span class="text-[10px] text-amber-300/80 block truncate">Cotes marché > IA</span>
+          </div>
+          <div class="glass-card rounded-2xl p-3 min-w-0">
+            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">Matchs Réels</span>
+            <p id="kpi-total-matches" class="text-lg sm:text-2xl font-mono font-extrabold text-white mt-0.5">0</p>
+            <span class="text-[10px] text-cyan-300 block truncate">Flux ESPN / Odds API</span>
+          </div>
+        </div>
+
+        <!-- Recherche & Filtres -->
+        <div class="glass-card rounded-3xl p-3 sm:p-4 space-y-2.5">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-1 min-w-0">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+              <input id="match-search-input" type="text" oninput="setSearchQuery(this.value)" placeholder="Rechercher une équipe, un joueur, une ligue..." class="w-full min-h-[40px] rounded-2xl bg-[#0B0F19] border border-white/[0.12] focus:border-cyan-400 pl-9 pr-8 py-2 text-xs text-white outline-none" />
+              <button id="clear-search-btn" onclick="clearSearchQuery()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold p-1">✕</button>
+            </div>
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+              <button id="btn-pinned-only" onclick="toggleFilterFlag('pinnedOnly')" class="min-h-[38px] px-2.5 py-1.5 rounded-2xl text-[11px] font-bold bg-white/[0.04] text-slate-300 border border-white/[0.08] flex items-center gap-1 shrink-0 transition">
+                <span>★ Suivis</span>
+                <span id="pinned-count-badge" class="px-1.5 rounded bg-white/10 font-mono text-[10px]">0</span>
+              </button>
+              <button id="btn-conf-only" onclick="toggleFilterFlag('highConfOnly')" class="min-h-[38px] px-2.5 py-1.5 rounded-2xl text-[11px] font-bold bg-white/[0.04] text-slate-300 border border-white/[0.08] flex items-center gap-1 shrink-0 transition">
+                <span>🎯 ≥58%</span>
+              </button>
+              <button id="btn-steam-only" onclick="toggleFilterFlag('trapOrSteamOnly')" class="min-h-[38px] px-2.5 py-1.5 rounded-2xl text-[11px] font-bold bg-white/[0.04] text-slate-300 border border-white/[0.08] flex items-center gap-1 shrink-0 transition">
+                <span>⚠️ Alertes</span>
+              </button>
+              <button id="btn-value-only" onclick="toggleFilterFlag('valueOnly')" class="min-h-[38px] px-2.5 py-1.5 rounded-2xl text-[11px] font-bold bg-white/[0.04] text-amber-300/80 border border-amber-400/20 flex items-center gap-1 shrink-0 transition">
+                <span>⭐ Values</span>
+                <span id="value-count-badge" class="px-1.5 rounded bg-amber-400/20 text-amber-300 font-mono text-[10px]">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Ligues -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            <button onclick="setLeagueFilter('ALL')" data-league="ALL" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white text-obsidian shrink-0 transition">Tous</button>
+            <button onclick="setLeagueFilter('LIVE')" data-league="LIVE" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-rose-500/15 text-rose-300 hover:text-white border border-rose-500/35 shrink-0 transition">● Direct</button>
+            <button onclick="setLeagueFilter('Ligue des Nations')" data-league="Ligue des Nations" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🇪🇺 Nations</button>
+            <button onclick="setLeagueFilter('Ligue 1')" data-league="Ligue 1" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🇫🇷 Ligue 1</button>
+            <button onclick="setLeagueFilter('Champions League')" data-league="Champions League" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🏆 LDC</button>
+            <button onclick="setLeagueFilter('Premier League')" data-league="Premier League" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</button>
+            <button onclick="setLeagueFilter('La Liga')" data-league="La Liga" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🇪🇸 La Liga</button>
+            <button onclick="setLeagueFilter('Serie A')" data-league="Serie A" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🇮🇹 Serie A</button>
+            <button onclick="setLeagueFilter('ATP')" data-league="ATP" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🎾 ATP</button>
+            <button onclick="setLeagueFilter('NBA')" data-league="NBA" class="league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition">🏀 NBA</button>
+          </div>
+
+          <!-- Tri & Bascule d'Affichage -->
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.06]">
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <button onclick="setSortMode('default')" data-sort="default" class="sort-pill px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition bg-white/10 text-white shrink-0">⚡ Auto</button>
+              <button onclick="setSortMode('value')" data-sort="value" class="sort-pill px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-amber-300 hover:text-white border border-amber-400/20 shrink-0">⭐ Values</button>
+              <button onclick="setSortMode('conf')" data-sort="conf" class="sort-pill px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0">🎯 Confiance</button>
+              <button onclick="setSortMode('time')" data-sort="time" class="sort-pill px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0">⏰ Heure</button>
+            </div>
+            <div id="network-status-badge" class="flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>En direct</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liste des Matchs -->
+        <div id="matches-container" class="space-y-3.5"></div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- ONGLET 2 : COMBINÉS IA, KELLY & PAPER TRADING             -->
+      <!-- ========================================================= -->
+      <section id="view-sgp" class="hidden tab-fade space-y-4">
+        <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-4 border-cyan-400/30">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-extrabold bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 text-cyan-300 border border-cyan-400/35">🤖 COMPOSITEUR AUTOMATIQUE</span>
+              <h2 class="text-base sm:text-lg font-extrabold text-white mt-1.5">Combiné Basé sur les Cotes Réelles</h2>
+              <p class="text-xs text-slate-400 mt-0.5">
+                Assemble uniquement les matchs ayant une cote réelle confirmée par le marché et sans alerte de piège.
+              </p>
+            </div>
+            <div class="flex items-center gap-1 bg-[#0B0F19] p-1 rounded-2xl border border-white/[0.08] w-full sm:w-auto">
+              <button onclick="setAiComboProfile('safe')" data-combo-prof="safe" class="combo-prof-btn flex-1 sm:flex-none px-2.5 py-2 rounded-xl text-[11px] font-extrabold transition bg-cyan-400 text-obsidian">🛡️ Sûr (2)</button>
+              <button onclick="setAiComboProfile('balanced')" data-combo-prof="balanced" class="combo-prof-btn flex-1 sm:flex-none px-2.5 py-2 rounded-xl text-[11px] font-bold transition text-slate-300">⚖️ Équilibré (3)</button>
+              <button onclick="setAiComboProfile('ambition')" data-combo-prof="ambition" class="combo-prof-btn flex-1 sm:flex-none px-2.5 py-2 rounded-xl text-[11px] font-bold transition text-slate-300">🚀 Ambition (4)</button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.06]">
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">Cote cible :</span>
+              <button onclick="setTargetOdd(0)" data-target-odd="0" class="target-odd-btn px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition bg-cyan-400 text-obsidian">Auto</button>
+              <button onclick="setTargetOdd(2.0)" data-target-odd="2.0" class="target-odd-btn px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 border border-white/[0.07]">~2.00</button>
+              <button onclick="setTargetOdd(3.0)" data-target-odd="3.0" class="target-odd-btn px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 border border-white/[0.07]">~3.00</button>
+              <button onclick="setTargetOdd(5.0)" data-target-odd="5.0" class="target-odd-btn px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 border border-white/[0.07]">~5.00</button>
+            </div>
+            <button id="btn-tonight-filter" onclick="toggleTonightFilter()" class="px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 border border-white/[0.08] flex items-center gap-1 shrink-0">
+              <span>🌙</span>
+              <span>Aujourd'hui</span>
+            </button>
+          </div>
+
+          <div id="ai-auto-combo-body" class="space-y-3"></div>
+
+          <!-- Mise & Gain Potentiel -->
+          <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-3 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">Mise :</span>
+              <button onclick="setComboStake(5)" data-stake="5" class="combo-stake-btn px-2.5 py-1 rounded-xl text-xs font-bold transition bg-white/[0.05] text-slate-300 border border-white/[0.08]">5 €</button>
+              <button onclick="setComboStake(10)" data-stake="10" class="combo-stake-btn px-2.5 py-1 rounded-xl text-xs font-extrabold transition bg-emerald-400 text-obsidian">10 €</button>
+              <button onclick="setComboStake(20)" data-stake="20" class="combo-stake-btn px-2.5 py-1 rounded-xl text-xs font-bold transition bg-white/[0.05] text-slate-300 border border-white/[0.08]">20 €</button>
+              <button onclick="setComboStake(50)" data-stake="50" class="combo-stake-btn px-2.5 py-1 rounded-xl text-xs font-bold transition bg-white/[0.05] text-slate-300 border border-white/[0.08]">50 €</button>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto font-mono text-right">
+              <span class="text-[11px] text-slate-400">Gain :</span>
+              <div class="flex items-baseline gap-1.5">
+                <strong id="combo-potential-payout" class="text-base font-extrabold text-emerald-400">-- €</strong>
+                <span id="combo-potential-profit" class="text-[10px] text-emerald-300/80">(+--)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 pt-1">
+            <button onclick="rerollAiCombo()" class="min-h-[42px] py-2 px-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-xs font-extrabold text-slate-200 flex items-center justify-center gap-1 transition">
+              <span>🔄</span>
+              <span>Variante</span>
+            </button>
+            <button onclick="trackCurrentComboPaperBet()" class="min-h-[42px] py-2 px-2.5 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-xs font-extrabold text-emerald-300 flex items-center justify-center gap-1 transition">
+              <span>📥</span>
+              <span id="btn-track-paper-label" class="truncate">Miser 10€</span>
+            </button>
+            <button onclick="copyAiAutoCombo()" class="min-h-[42px] py-2 px-2.5 rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-400 text-obsidian text-xs font-extrabold flex items-center justify-center gap-1 transition">
+              <span>📋</span>
+              <span>Copier</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- PAPER TRADING (BANKROLL VIRTUELLE RÉELLE) -->
+        <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3 border-emerald-500/25">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <h3 class="text-xs sm:text-sm font-extrabold text-white truncate">Suivi Paper Trading (Vérification Live)</h3>
+            </div>
+            <button onclick="resetPaperTrading()" class="text-[10px] font-mono text-slate-400 hover:text-white underline shrink-0">Réinitialiser</button>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-center">
+            <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-2.5">
+              <span class="text-[9px] text-slate-400 block">Bankroll</span>
+              <strong id="paper-bankroll" class="text-sm sm:text-base text-white">1 000.00 €</strong>
+            </div>
+            <div class="rounded-2xl bg-[#080B12] border border-emerald-500/35 p-2.5">
+              <span class="text-[9px] text-slate-400 block">Bénéfice Net</span>
+              <strong id="paper-profit" class="text-sm sm:text-base text-emerald-400">+0.00 €</strong>
+            </div>
+            <div class="rounded-2xl bg-[#080B12] border border-cyan-400/35 p-2.5">
+              <span class="text-[9px] text-slate-400 block">ROI Réel</span>
+              <strong id="paper-roi" class="text-sm sm:text-base text-cyan-300">+0.0%</strong>
+            </div>
+            <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-2.5">
+              <span class="text-[9px] text-slate-400 block">Réussite</span>
+              <strong id="paper-winrate" class="text-sm sm:text-base text-violet-300">0.0%</strong>
+              <span id="paper-bets-count" class="text-[9px] text-slate-500 block">0 suivi</span>
+            </div>
+          </div>
+          <div id="paper-bets-list" class="space-y-1.5 pt-1"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- ONGLET 3 : LABO SCORES & BUTS ATTENDUS (POISSON xG)       -->
+      <!-- ========================================================= -->
+      <section id="view-poisson" class="hidden tab-fade space-y-4">
+        <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-4">
+          <div>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">MODÈLE MATHÉMATIQUE DE POISSON</span>
+            <h2 class="text-base sm:text-lg font-extrabold text-white mt-1.5">Simulateur Scores Exacts & Buts Attendus (xG)</h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Ajustez les xG de chaque équipe (ou chargez un match depuis l'accueil) pour calculer la distribution exacte des scores selon la loi de Poisson.
+            </p>
+          </div>
+          <div id="standalone-poisson-container"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- ONGLET 4 : AUDIT RÉEL & CALIBRATION DU MODÈLE             -->
+      <!-- ========================================================= -->
+      <section id="view-accuracy" class="hidden tab-fade space-y-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <div class="glass-card rounded-2xl p-3.5">
+            <span class="text-[10px] text-slate-400 block">Taux de Réussite Réel</span>
+            <p id="acc-global-rate" class="text-lg sm:text-2xl font-mono font-extrabold text-emerald-400 mt-0.5">--%</p>
+            <span id="acc-global-sample" class="text-[10px] text-slate-400 mt-0.5 block">0 match vérifié</span>
+          </div>
+          <div class="glass-card rounded-2xl p-3.5 border-emerald-500/30">
+            <span class="text-[10px] text-slate-300 font-semibold block">Confiance Haute (≥60%)</span>
+            <p id="acc-high-rate" class="text-lg sm:text-2xl font-mono font-extrabold text-emerald-400 mt-0.5">--%</p>
+            <span class="text-[10px] text-emerald-300/90 mt-0.5 block">Favoris nets</span>
+          </div>
+          <div class="glass-card rounded-2xl p-3.5">
+            <span class="text-[10px] text-slate-400 block">Score de Brier</span>
+            <p id="acc-brier-score" class="text-lg sm:text-2xl font-mono font-extrabold text-violet-300 mt-0.5">--</p>
+            <span class="text-[10px] text-slate-400 mt-0.5 block">0.000 = parfait</span>
+          </div>
+          <div class="glass-card rounded-2xl p-3.5">
+            <span class="text-[10px] text-slate-400 block">En Attente de Fin</span>
+            <p id="acc-auto-count" class="text-lg sm:text-2xl font-mono font-extrabold text-white mt-0.5">0</p>
+            <span class="text-[10px] text-emerald-400 mt-0.5 block">Prédictions capturées</span>
+          </div>
+        </div>
+
+        <!-- Paramètres Calibrés sur les Résultats Réels -->
+        <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/35">CALIBRATION PLATT SCALING</span>
+              <h3 class="text-sm sm:text-base font-extrabold text-white mt-1.5">Poids du Modèle (Basés sur l'Audit Live)</h3>
+              <p class="text-[11px] text-slate-400">Les poids ne s'ajustent que lorsque de vrais matchs suivis par l'application se terminent.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button onclick="exportAiMemoryJson()" class="min-h-[34px] px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-[11px] font-bold text-cyan-200 transition">💾 Exporter</button>
+              <button onclick="triggerAiMemoryRestore()" class="min-h-[34px] px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/40 text-[11px] font-bold text-indigo-200 transition">📂 Restaurer</button>
+              <input id="ai-memory-file-input" type="file" accept=".json,application/json" onchange="handleAiMemoryFile(event)" class="hidden" />
+              <button onclick="resetVerifiedHistory()" class="min-h-[34px] px-2.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-[10px] font-bold text-slate-300">Réinitialiser</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono text-xs">
+            <div class="rounded-xl bg-[#080B12] border border-white/[0.08] p-3">
+              <span class="text-[10px] text-slate-400 block">Génération</span>
+              <strong id="learn-epochs" class="text-base text-emerald-400">Gen #1</strong>
+              <span id="learn-samples" class="text-[10px] text-slate-500 block mt-0.5">0 match audité</span>
+            </div>
+            <div class="rounded-xl bg-[#080B12] border border-white/[0.08] p-3">
+              <span class="text-[10px] text-slate-400 block">Température</span>
+              <strong id="learn-temp" class="text-base text-violet-300">1.000</strong>
+              <span id="learn-temp-note" class="text-[10px] text-slate-500 block mt-0.5">Neutre</span>
+            </div>
+            <div class="rounded-xl bg-[#080B12] border border-white/[0.08] p-3">
+              <span class="text-[10px] text-slate-400 block">Écart Calibration</span>
+              <strong id="learn-home-bias" class="text-base text-blue-300">--</strong>
+              <span class="text-[10px] text-slate-500 block mt-0.5">Prédit − réel</span>
+            </div>
+            <div class="rounded-xl bg-[#080B12] border border-white/[0.08] p-3">
+              <span class="text-[10px] text-slate-400 block">Ajust. Forme</span>
+              <strong id="weight-form-val" class="text-base text-cyan-300">Off</strong>
+              <span class="text-[10px] text-slate-500 block mt-0.5">Déjà dans les cotes</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historique des Prédictions Réelles Vérifiées -->
+        <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-extrabold text-white">Journal des Prédictions Vérifiées en Direct</h3>
+            <span class="text-[10px] font-mono text-emerald-400">100 % RÉEL</span>
+          </div>
+          <div id="past-predictions-list" class="space-y-2"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- PANNEAU LATÉRAL : SYNTHÈSE & CRITÈRE DE KELLY             -->
+    <!-- ========================================================= -->
+    <aside class="w-full lg:w-[370px] xl:w-[395px] shrink-0 space-y-4">
+      <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-4 lg:sticky lg:top-20 border-white/[0.1]">
+        <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h2 class="text-sm font-extrabold text-white">Décrypteur & Kelly IA</h2>
+          </div>
+          <span class="px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-300 font-mono text-[10px] font-bold">DONNÉES RÉELLES</span>
+        </div>
+
+        <!-- Focus Match Sélectionné -->
+        <div id="ai-focus-card" class="rounded-2xl bg-[#080B12] border border-emerald-500/35 p-3.5 space-y-2.5"></div>
+
+        <!-- Top 3 Convictions Réelles du Moment -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">Top 3 Probabilités du Moment</span>
+            <span class="text-[10px] text-slate-400">Hors matchs finis</span>
+          </div>
+          <div id="top-predictions-sidebar" class="space-y-2"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- NAVIGATION MOBILE BAS DE PAGE (4 ONGLETS IPHONE 15) -->
+  <nav class="ios-safe-bottom lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0B0F19]/95 backdrop-blur-2xl border-t border-slate-400/[0.14] px-2 pt-1.5">
+    <div class="grid grid-cols-4 gap-1.5">
+      <button onclick="switchTab('matches')" data-nav="matches" class="nav-btn min-h-[48px] py-1.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <span>Matchs</span>
+      </button>
+      <button onclick="switchTab('sgp')" data-nav="sgp" class="nav-btn min-h-[48px] py-1.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        <span>Combinés</span>
+      </button>
+      <button onclick="switchTab('poisson')" data-nav="poisson" class="nav-btn min-h-[48px] py-1.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span>Scores xG</span>
+      </button>
+      <button onclick="switchTab('accuracy')" data-nav="accuracy" class="nav-btn min-h-[48px] py-1.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Audit</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MODALE 1 : SIMULATEUR POISSON & COURBE DE COTES -->
+  <div id="inspect-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="glass-card rounded-t-3xl sm:rounded-3xl max-w-xl w-full max-h-[90dvh] overflow-y-auto p-5 space-y-4 border-white/[0.12] shadow-2xl">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <span id="insp-league" class="text-[10px] font-mono font-bold uppercase text-emerald-400">COMPÉTITION</span>
+          <h3 id="insp-title" class="text-base sm:text-lg font-extrabold text-white truncate">Affiche</h3>
+          <p id="insp-sub" class="text-xs text-slate-400">Distribution de Poisson & historique des probabilités</p>
+        </div>
+        <button onclick="closeInspectModal()" class="p-2 rounded-xl bg-white/[0.06] text-slate-300 hover:text-white shrink-0">✕</button>
+      </div>
+      <div id="insp-body" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- MODALE 2 : MÉTHODOLOGIE -->
+  <div id="glossary-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="glass-card rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[88dvh] overflow-y-auto p-5 space-y-4 border-white/[0.12] shadow-2xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-mono font-bold uppercase text-violet-400">Transparence & Sources</span>
+          <h3 class="text-lg font-extrabold text-white">Origine des Données Réelles</h3>
+        </div>
+        <button onclick="closeGlossaryModal()" class="p-2 rounded-xl bg-white/[0.06] text-slate-300 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-2.5 text-xs">
+        <div class="rounded-2xl bg-[#080B12] border border-emerald-500/30 p-3.5">
+          <p class="font-extrabold text-emerald-400">1. Flux Officiels Temps Réel (ESPN & The Odds API)</p>
+          <p class="text-slate-300 mt-1 leading-relaxed">Les horaires, scores en direct, séries récentes (V-N-D) et bilans de saison proviennent directement des endpoints publics ESPN. Lorsqu'une cote officielle est publiée, la marge du bookmaker est retirée mathématiquement.</p>
+        </div>
+        <div class="rounded-2xl bg-[#080B12] border border-cyan-500/30 p-3.5">
+          <p class="font-extrabold text-cyan-300">2. Aucune Donnée Inventée</p>
+          <p class="text-slate-300 mt-1 leading-relaxed">Si une rencontre n'a pas encore de cote officielle publiée par les bookmakers, l'application affiche explicitement <strong>« Cotes non publiées »</strong> plutôt que de générer des probabilités fictives.</p>
+        </div>
+        <div class="rounded-2xl bg-[#080B12] border border-amber-500/30 p-3.5">
+          <p class="font-extrabold text-amber-400">3. Critère de Kelly Fractionnaire (1/4 Kelly)</p>
+          <p class="text-slate-300 mt-1 leading-relaxed">Lorsqu'une cote réelle offre un avantage positif par rapport à la probabilité calibrée par le modèle, la mise recommandée est calculée via la formule de Kelly divisée par 4 pour protéger la bankroll.</p>
+        </div>
+      </div>
+      <button onclick="closeGlossaryModal()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-obsidian font-extrabold text-xs">Fermer</button>
+    </div>
+  </div>
+
+  <!-- MODALE 3 : PARAMÈTRES API -->
+  <div id="feed-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="glass-card rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90dvh] overflow-y-auto p-5 space-y-4 border-white/[0.12] shadow-2xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-mono font-bold uppercase text-emerald-400">Connecteurs Réels</span>
+          <h3 class="text-lg font-extrabold text-white">Sources de Données & Clé API</h3>
+        </div>
+        <button onclick="closeFeedModal()" class="p-2 rounded-xl bg-white/[0.06] text-slate-300 hover:text-white">✕</button>
+      </div>
+
+      <div class="rounded-2xl bg-[#080B12] border border-emerald-500/35 p-3.5 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-emerald-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Flux Public ESPN (Scores, Forme & Cotes US)
+          </span>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold">ACTIF</span>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          Scores, minute et cotes US en direct sur 10 ligues (J-3 → J+3), sans clé. Actualisation auto toutes les 30 s quand un match est en cours.
+        </p>
+      </div>
+
+      <div class="rounded-2xl bg-[#080B12] border border-blue-500/35 p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-blue-300">The Odds API (Cotes Européennes & FR)</span>
+          <span id="odds-api-quota-badge" class="px-2 py-0.5 rounded bg-white/[0.06] text-slate-300 font-mono text-[10px]">Clé : Non définie</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Ajoutez votre clé gratuite <a href="https://the-odds-api.com" target="_blank" rel="noopener" class="text-blue-400 underline">the-odds-api.com</a> pour un consensus de cotes multi-bookmakers (Pinnacle pondéré). Requis pour détecter de vraies « Values ». Rafraîchi toutes les 10 min pour protéger le quota.
+        </p>
+        <div class="flex gap-2">
+          <input id="feed-api-key-input" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Coller votre clé API..." class="flex-1 rounded-xl bg-white/[0.04] border border-white/[0.12] focus:border-blue-400 px-3 py-2 font-mono text-xs text-white outline-none" />
+          <button onclick="saveFeedSettings()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shrink-0 transition">Valider</button>
+        </div>
+      </div>
+
+      <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-3.5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-extrabold text-white">Actualisation automatique</p>
+            <p class="text-[11px] text-slate-400">Intervalle de requête réseau</p>
+          </div>
+          <select id="feed-interval-select" onchange="setAutoSyncInterval(this.value)" class="rounded-xl bg-white/[0.06] border border-white/[0.12] px-3 py-1.5 font-mono text-xs font-bold text-white outline-none">
+            <option value="0">Manuel</option>
+            <option value="30">30 secondes (direct)</option>
+            <option value="60" selected>60 secondes</option>
+            <option value="120">2 minutes</option>
+            <option value="300">5 minutes</option>
+          </select>
+        </div>
+        <div class="text-[11px] font-mono text-slate-400 pt-2 border-t border-white/[0.06] flex flex-wrap justify-between gap-2">
+          <span id="diag-source">Source : --</span>
+          <span id="diag-updated">Mis à jour : --</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="clearOddsSnapshots()" class="py-2.5 px-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-slate-300 font-bold text-xs transition">Effacer courbes</button>
+        <button onclick="closeFeedModal(); syncLiveFeeds(true);" class="py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-obsidian font-extrabold text-xs transition">⚡ Synchroniser</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. ÉTAT GLOBAL & PERSISTANCE LOCALE
+    // =========================================================================
+    const STORAGE_KEY = 'oddsedge_real_state_v3';
+    const SNAPSHOTS_KEY = 'oddsedge_real_snapshots_v3';
+    const CACHE_KEY = 'oddsedge_real_cache_v3';
+    const AUDIT_KEY = 'oddsedge_real_audit_v3';
+    const WEIGHTS_KEY = 'oddsedge_real_weights_v3';
+    const PAPER_KEY = 'oddsedge_real_paper_v3';
+
+    const DEFAULT_AI_WEIGHTS = {
+      generation: 1,
+      temperature: 1.0,
+      homeBias: 0.045,
+      wForm: 0.20,
+      wXgDiff: 0.22,
+      wMarketSteam: 0.16,
+      trapSensitivity: 0.52,
+      sportMultipliers: { Football: 1.0, Basketball: 1.0, Tennis: 1.0 }
+    };
+
+    let MATCHES_DATA = [];
+
+    const state = {
+      activeTab: 'matches',
+      friendlyMode: true,
+      leagueFilter: 'ALL',
+      searchQuery: '',
+      sortMode: 'default',
+      selectedStake: 10,
+      pinnedOnly: false,
+      highConfOnly: false,
+      trapOrSteamOnly: false,
+      valueOnly: false,
+      targetOdd: 0,
+      tonightOnly: false,
+      pinnedMatchIds: [],
+      focusedMatchId: '',
+      aiComboProfile: 'safe',
+      aiComboVariantOffset: 0,
+      lastGeneratedCombo: null,
+      paperBankroll: 1000.0,
+      paperBets: [],
+      oddsApiKey: '',
+      autoSyncSeconds: 60,
+      countdownRemaining: 60,
+      feedSource: 'Connexion...',
+      lastSyncedAt: null,
+      quotaRemaining: null,
+      snapshots: {},
+      prePredictions: {},
+      verifiedHistory: [],
+      aiWeights: JSON.parse(JSON.stringify(DEFAULT_AI_WEIGHTS)),
+      pinnedLiveBaseline: {},
+      pregame: {},
+      oddsCache: null,
+      oddsError: '',
+      offline: false,
+      swStale: false,
+      feedFailures: 0,
+      syncing: false
+    };
+
+    const poissonState = {
+      insp: { xgH: 1.5, xgA: 1.2 },
+      lab: { homeName: 'Domicile', awayName: 'Extérieur', xgH: 1.60, xgA: 1.25 }
+    };
+
+    let _hapticLabel = null;
+    function triggerHaptic(type = 'light') {
+      try {
+        if ('vibrate' in navigator) {
+          navigator.vibrate(type === 'light' ? 10 : type === 'medium' ? 24 : [15, 30, 20]);
+        } else {      // Safari iOS 17.4+ : retour haptique via un interrupteur natif
+          if (!_hapticLabel) {
+            const l = document.createElement('label');
+            l.setAttribute('aria-hidden', 'true');
+            l.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none';
+            const i = document.createElement('input');
+            i.type = 'checkbox'; i.setAttribute('switch', '');
+            l.appendChild(i); document.body.appendChild(l);
+            _hapticLabel = l;
+          }
+          _hapticLabel.click();
+        }
+      } catch {}
+    }
+
+    function showToast(title, desc) {
+      const box = document.getElementById('toast-box');
+      if (!box) return;
+      document.getElementById('toast-title').textContent = title;
+      document.getElementById('toast-desc').textContent = desc;
+      box.classList.remove('opacity-0', '-translate-y-4');
+      box.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        box.classList.add('opacity-0', '-translate-y-4');
+        box.classList.remove('opacity-100', 'translate-y-0');
+      }, 3000);
+    }
+
+    function loadState() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        if (raw) {
+          if (typeof raw.friendlyMode === 'boolean') state.friendlyMode = raw.friendlyMode;
+          if (typeof raw.oddsApiKey === 'string') state.oddsApiKey = raw.oddsApiKey;
+          if (typeof raw.autoSyncSeconds === 'number') state.autoSyncSeconds = raw.autoSyncSeconds;
+          if (Array.isArray(raw.pinnedMatchIds)) state.pinnedMatchIds = raw.pinnedMatchIds;
+        }
+        state.snapshots = JSON.parse(localStorage.getItem(SNAPSHOTS_KEY) || '{}') || {};
+        state.pregame = JSON.parse(localStorage.getItem(PREGAME_KEY) || '{}') || {};
+        const oc = JSON.parse(localStorage.getItem(ODDS_CACHE_KEY) || 'null');
+        if (oc && oc.matches && Date.now() - oc.ts < ODDS_MAX_AGE_MS) state.oddsCache = oc;
+        const audit = JSON.parse(localStorage.getItem(AUDIT_KEY) || 'null');
+        if (audit) {
+          if (audit.prePredictions) state.prePredictions = audit.prePredictions;
+          if (Array.isArray(audit.verifiedHistory)) state.verifiedHistory = audit.verifiedHistory;
+        }
+        const paper = JSON.parse(localStorage.getItem(PAPER_KEY) || 'null');
+        if (paper) {
+          if (typeof paper.paperBankroll === 'number') state.paperBankroll = paper.paperBankroll;
+          if (Array.isArray(paper.paperBets)) state.paperBets = paper.paperBets;
+        }
+        const weights = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || 'null');
+        if (weights) {
+          state.aiWeights = {
+            ...JSON.parse(JSON.stringify(DEFAULT_AI_WEIGHTS)),
+            ...weights,
+            sportMultipliers: { ...DEFAULT_AI_WEIGHTS.sportMultipliers, ...(weights.sportMultipliers || {}) }
+          };
+        }
+      } catch {}
+      state.countdownRemaining = state.autoSyncSeconds || 60;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          friendlyMode: state.friendlyMode,
+          oddsApiKey: state.oddsApiKey,
+          autoSyncSeconds: state.autoSyncSeconds,
+          pinnedMatchIds: state.pinnedMatchIds
+        }));
+      } catch {}
+    }
+
+    function saveAuditState() {
+      try {
+        localStorage.setItem(AUDIT_KEY, JSON.stringify({
+          prePredictions: state.prePredictions,
+          verifiedHistory: state.verifiedHistory.slice(0, 300)
+        }));
+      } catch {}
+    }
+
+    function saveWeightsState() {
+      try { localStorage.setItem(WEIGHTS_KEY, JSON.stringify(state.aiWeights)); } catch {}
+    }
+
+    function savePaperTradingState() {
+      try {
+        localStorage.setItem(PAPER_KEY, JSON.stringify({
+          paperBankroll: Number(state.paperBankroll.toFixed(2)),
+          paperBets: state.paperBets.slice(0, 50)
+        }));
+      } catch {}
+    }
+
+    function saveSnapshots() {
+      try {
+        Object.keys(state.snapshots).forEach(k => {
+          if (Array.isArray(state.snapshots[k]) && state.snapshots[k].length > 20) {
+            state.snapshots[k] = state.snapshots[k].slice(-20);
+          }
+        });
+        localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(state.snapshots));
+      } catch {}
+    }
+
+    // =========================================================================
+    // 2. OUTILS MATHÉMATIQUES & NORMALISATION DES DONNÉES RÉELLES
+    // =========================================================================
+    const ODDS_CACHE_KEY = 'oddsedge_real_odds_v3';
+    const PREGAME_KEY = 'oddsedge_real_pregame_v3';
+    const ODDS_MIN_REFRESH_MS = 10 * 60 * 1000;   // protège le quota The Odds API
+    const ODDS_MAX_AGE_MS = 45 * 60 * 1000;
+    const SHARP_BOOKS = { pinnacle: 3, betfair_ex_eu: 2.5, betfair_ex_uk: 2.5, matchbook: 2, smarkets: 2 };
+    // Ajustement « forme » : désactivé. Le marché intègre déjà la forme ; l'ajout d'un signal non validé
+    // dégrade la calibration. Passer à true uniquement si l'audit prouve un gain de Brier.
+    const FORM_TWEAK_ENABLED = false;
+    const LEAGUE_GOALS = { 'Ligue 1': 2.75, 'Premier League': 2.85, 'La Liga': 2.55, 'Serie A': 2.6, 'Bundesliga': 3.1, 'Champions League': 2.85, 'Europa League': 2.7, 'Ligue des Nations': 2.6 };
+
+    const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports';
+    const ESPN_FEEDS = [
+      { league: 'Ligue des Nations', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/uefa.nations/scoreboard` },
+      { league: 'Champions League', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/uefa.champions/scoreboard` },
+      { league: 'Ligue 1', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/fra.1/scoreboard` },
+      { league: 'Premier League', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/eng.1/scoreboard` },
+      { league: 'La Liga', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/esp.1/scoreboard` },
+      { league: 'Serie A', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/ita.1/scoreboard` },
+      { league: 'Bundesliga', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/ger.1/scoreboard` },
+      { league: 'Europa League', sport: 'Football', ranged: true, url: `${ESPN_BASE}/soccer/uefa.europa/scoreboard` },
+      { league: 'NBA', sport: 'Basketball', ranged: true, url: `${ESPN_BASE}/basketball/nba/scoreboard` },
+      { league: 'ATP', sport: 'Tennis', ranged: false, url: `${ESPN_BASE}/tennis/atp/scoreboard` }
+    ];
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
+    function median(arr) {
+      const a = [...arr].sort((x, y) => x - y);
+      if (!a.length) return 0;
+      const mid = Math.floor(a.length / 2);
+      return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+    }
+    function normCdf(x) {
+      const t = 1 / (1 + 0.2316419 * Math.abs(x));
+      const d = 0.3989423 * Math.exp(-x * x / 2);
+      const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+      return x > 0 ? 1 - p : p;
+    }
+    function logit(p) { p = clamp(p, 0.001, 0.999); return Math.log(p / (1 - p)); }
+    function ymd(d) { return d.toISOString().slice(0, 10).replace(/-/g, ''); }
+    function isSameLocalDay(iso) { return !!iso && new Date(iso).toDateString() === new Date().toDateString(); }
+
+    function americanToDecimal(ml) {
+      const n = Number(ml);
+      if (!n || isNaN(n)) return null;
+      return n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n);
+    }
+    // Accepte moneyline US (-150, +130, "EVEN") ou cote décimale (1.85)
+    function toDec(v) {
+      if (v === undefined || v === null || v === '') return null;
+      const s = String(v).trim().toUpperCase();
+      if (s === 'EVEN' || s === 'EV') return 2;
+      const n = Number(s.replace('+', ''));
+      if (!isFinite(n) || n === 0) return null;
+      if (Math.abs(n) >= 100) return americanToDecimal(n);
+      if (n > 1 && n < 100) return n;
+      return null;
+    }
+
+    // Retrait de la marge par méthode de puissance (corrige le biais favori/outsider,
+    // plus fiable que la normalisation proportionnelle).
+    function devigPower(odds) {
+      const inv = odds.map(o => 1 / o);
+      const s = inv.reduce((a, b) => a + b, 0);
+      if (s <= 1.0001) return inv.map(p => p / s);
+      let lo = 1, hi = 4;
+      for (let i = 0; i < 50; i++) {
+        const k = (lo + hi) / 2;
+        const t = inv.reduce((a, p) => a + Math.pow(p, k), 0);
+        if (t > 1) lo = k; else hi = k;
+      }
+      const k = (lo + hi) / 2;
+      const q = inv.map(p => Math.pow(p, k));
+      const tot = q.reduce((a, b) => a + b, 0);
+      return q.map(p => p / tot);
+    }
+
+    // --- Poisson bivarié avec correction Dixon-Coles (scores faibles) ---
+    function poissonArray(lambda, maxG) {
+      const a = [Math.exp(-lambda)];
+      for (let k = 1; k <= maxG; k++) a.push(a[k - 1] * lambda / k);
+      return a;
+    }
+    function scoreMatrix(lh, la, maxG = 8, rho = -0.08) {
+      const ph = poissonArray(lh, maxG), pa = poissonArray(la, maxG);
+      const cells = [];
+      let tot = 0;
+      for (let h = 0; h <= maxG; h++) {
+        for (let a = 0; a <= maxG; a++) {
+          let p = ph[h] * pa[a];
+          if (rho && h <= 1 && a <= 1) {
+            const tau = h === 0 && a === 0 ? 1 - lh * la * rho
+              : h === 0 && a === 1 ? 1 + lh * rho
+              : h === 1 && a === 0 ? 1 + la * rho
+              : 1 - rho;
+            p *= Math.max(0, tau);
+          }
+          cells.push({ h, a, p });
+          tot += p;
+        }
+      }
+      let H = 0, D = 0, A = 0, O25 = 0, BTTS = 0;
+      cells.forEach(c => {
+        c.p /= tot;
+        if (c.h > c.a) H += c.p; else if (c.h === c.a) D += c.p; else A += c.p;
+        if (c.h + c.a > 2.5) O25 += c.p;
+        if (c.h > 0 && c.a > 0) BTTS += c.p;
+      });
+      return { cells, H, D, A, O25, BTTS };
+    }
+
+    // Retrouve les xG (λ domicile / extérieur) cohérents avec les probabilités 1N2 du marché.
+    // Recherche grossière puis affinage continu (pattern search) ; le total de buts n'est qu'un a priori souple
+    // (ligne Over/Under ESPN ou moyenne de ligue), jamais une contrainte dure qui dégraderait l'ajustement 1N2.
+    const _xgMemo = new Map();
+    function fitXgAuto(probs, knownTotal, priorTotal) {
+      const [pH, pD, pA] = probs;
+      const memoKey = [pH, pD, pA].map(p => p.toFixed(4)).join('|') + '|' + (knownTotal || 0) + '|' + priorTotal;
+      if (_xgMemo.has(memoKey)) return _xgMemo.get(memoKey);
+      const T0 = knownTotal || priorTotal;
+      const lam = knownTotal ? 0.0008 : 0.0003;
+      const cost = (t, s) => {
+        const lh = (t + s) / 2, la = (t - s) / 2;
+        if (lh < 0.1 || la < 0.1 || t > 6) return Infinity;
+        const mx = scoreMatrix(lh, la, 8);
+        return (mx.H - pH) ** 2 + (mx.D - pD) ** 2 + (mx.A - pA) ** 2 + lam * (t - T0) ** 2;
+      };
+      let best = { c: Infinity, t: T0, s: 0 };
+      for (let t = T0 - 0.8; t <= T0 + 0.8001; t += 0.2) {
+        for (let s = -2.6; s <= 2.6001; s += 0.2) { const c = cost(t, s); if (c < best.c) best = { c, t, s }; }
+      }
+      let dt = 0.1, ds = 0.1;
+      for (let it = 0; it < 120 && (dt > 0.0005 || ds > 0.0005); it++) {
+        let moved = false;
+        for (const [a, b] of [[dt, 0], [-dt, 0], [0, ds], [0, -ds], [dt, ds], [-dt, -ds], [dt, -ds], [-dt, ds]]) {
+          const c = cost(best.t + a, best.s + b);
+          if (c < best.c - 1e-13) { best = { c, t: best.t + a, s: best.s + b }; moved = true; }
+        }
+        if (!moved) { dt /= 2; ds /= 2; }
+      }
+      const out = best.c === Infinity
+        ? { xgH: 1.45, xgA: 1.15 }
+        : { xgH: Number(((best.t + best.s) / 2).toFixed(2)), xgA: Number(((best.t - best.s) / 2).toFixed(2)) };
+      if (_xgMemo.size > 400) _xgMemo.clear();
+      _xgMemo.set(memoKey, out);
+      return out;
+    }
+
+    // --- Rapprochement ESPN ↔ The Odds API ---
+    // Règle stricte : TOUS les mots distinctifs du nom le plus court doivent se retrouver dans l'autre nom
+    // (« Man City » ≠ « Manchester United », « Union Berlin » ≠ « Hertha Berlin »).
+    // Les clubs à homonymes proches passent d'abord par une clé canonique (« Bayern » ≠ « Bayer Leverkusen »).
+    const TEAM_STOP = new Set(['fc', 'cf', 'afc', 'sc', 'as', 'ss', 'us', 'ac', 'club', 'the', 'de', 'del', 'la', 'le', 'al', 'sv', 'fk', 'ud', 'cd', 'rc', 'rcd', 'sk',
+      'fsv', 'vfb', 'vfl', 'tsg', 'and', 'hove', 'calcio', 'ca', 'sd', 'sco', 'osc', 'ogc', 'stade', 'st', 'saint', 'olympique', 'borussia']);
+    const TEAM_ALIAS = { spurs: 'tottenham', wolves: 'wolverhampton', gladbach: 'monchengladbach', man: 'manchester', utd: 'united', nottm: 'nottingham',
+      sheff: 'sheffield', wed: 'wednesday', rennais: 'rennes', lyonnais: 'lyon', munchen: 'munich', cologne: 'koln', czechia: 'czech', turkiye: 'turkey', holland: 'netherlands' };
+    const CLUB_CANON = [
+      ['psg', /^(psg|paris saint germain|paris sg|paris st germain)( fc)?$/],
+      ['parisfc', /^paris fc$/],
+      ['acmilan', /^(ac milan|a c milan|milan)$/],
+      ['inter', /^(fc )?(inter|inter milan|internazionale)( milano| milan)?$/],
+      ['mancity', /^(man city|manchester city)( fc)?$/],
+      ['manutd', /^(man utd|man united|manchester united|manchester utd)( fc)?$/],
+      ['atletico', /^(atletico( de)? madrid|atl madrid|atletico)( fc)?$/],
+      ['realmadrid', /^real madrid( cf)?$/],
+      ['athletic', /^athletic( club| bilbao)?$/],
+      ['bayern', /^(fc )?bayern( munich| munchen)?$/],
+      ['leverkusen', /^(bayer( 04)? )?leverkusen$/],
+      ['nireland', /^northern ireland$/],
+      ['ireland', /^(republic of )?ireland$/]
+    ];
+    function normTeam(name) {
+      return String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        .replace(/&/g, ' and ').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function canonTeam(norm) {
+      for (const [key, re] of CLUB_CANON) if (re.test(norm)) return key;
+      return null;
+    }
+    function teamTokens(name) {
+      const all = normTeam(name).split(' ').filter(t => t.length >= 2).map(t => TEAM_ALIAS[t] || t);
+      const keep = all.filter(t => !TEAM_STOP.has(t));
+      return keep.length ? keep : all;
+    }
+    function teamsMatch(a, b) {
+      const na = normTeam(a), nb = normTeam(b);
+      if (!na || !nb) return false;
+      if (na === nb) return true;
+      const ca = canonTeam(na), cb = canonTeam(nb);
+      if (ca || cb) return ca === cb;          // clé canonique d'un seul côté = on refuse plutôt que de risquer un faux rapprochement
+      const A = teamTokens(na), B = teamTokens(nb);
+      if (!A.length || !B.length) return false;
+      const [S, L] = A.length <= B.length ? [A, B] : [B, A];
+      const covered = (x, y) => x === y || (Math.min(x.length, y.length) >= 4 && (x.startsWith(y) || y.startsWith(x)));
+      return S.every(x => L.some(y => covered(x, y)));
+    }
+
+    // --- Forme / bilan ---
+    // ESPN : W (victoire) D (nul) L (défaite)  →  V / N / D (format FR)
+    function translateFormFR(rawForm) {
+      if (!rawForm || typeof rawForm !== 'string') return '';
+      const map = { W: 'V', D: 'N', L: 'D' };
+      return rawForm.toUpperCase().split('').map(c => map[c]).filter(Boolean).slice(-5).join('-');
+    }
+
+    function computeFormScore(formStr) {
+      if (!formStr || typeof formStr !== 'string') return 0;
+      const chars = formStr.replace(/[^VND]/gi, '').toUpperCase().split('').slice(-5);
+      if (!chars.length) return 0;
+      // Poids uniformes : l'ordre chronologique de la chaîne ESPN n'est pas garanti, on évite donc de pondérer « le plus récent ».
+      const total = chars.reduce((a, c) => a + (c === 'V' ? 1.0 : c === 'N' ? 0.25 : -0.80), 0);
+      return total / chars.length;
+    }
+
+    function parseRecordWinRate(recordStr, sport) {
+      if (!recordStr || typeof recordStr !== 'string') return null;
+      const parts = recordStr.split('-').map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+      if (parts.length < 2) return null;
+      // Football ESPN : V-N-D (victoires-nuls-défaites) ; basket/tennis : V-D
+      const wins = parts[0];
+      const draws = sport === 'Football' && parts.length >= 3 ? parts[1] : 0;
+      const losses = sport === 'Football' && parts.length >= 3 ? parts[2] : parts[1];
+      const total = wins + losses + draws;
+      if (total <= 0) return null;
+      return (wins + draws * 0.4) / total;
+    }
+
+    // Vrai tant que le coup d'envoi n'est pas passé : seules les cotes d'avant-match servent de référence
+    // (ESPN peut garder « pre » quelques minutes après le coup d'envoi, alors que les cotes sont déjà en jeu).
+    function beforeKickoff(m) {
+      if (m.statusState !== 'pre') return false;
+      const t = m.kickoffIso ? new Date(m.kickoffIso).getTime() : NaN;
+      return isNaN(t) || Date.now() < t;
+    }
+
+    function recordProbSnapshot(matchId, fairHomeOdd, record = true) {
+      const hist = state.snapshots[matchId] || [];
+      if (record && fairHomeOdd && fairHomeOdd > 1) {
+        const currProbPct = Number(((1 / fairHomeOdd) * 100).toFixed(1));
+        const nowTime = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const last = hist[hist.length - 1];
+        if (!last || Math.abs(last.p - currProbPct) >= 0.2) {
+          hist.push({ p: currProbPct, t: nowTime });
+          state.snapshots[matchId] = hist;
+        }
+      }
+      const deltaProbPct = hist.length >= 2 ? Number((hist[hist.length - 1].p - hist[0].p).toFixed(1)) : 0;
+      return { probHistory: hist, isSteam: Math.abs(deltaProbPct) >= 2.5, deltaProbPct };
+    }
+
+    function formatKickoffTimeFR(isoDate, statusState, statusDetail) {
+      if (statusState === 'in') return statusDetail || 'EN DIRECT';
+      if (statusState === 'post') return 'Terminé';
+      if (!isoDate) return 'Horaire N/C';
+      try {
+        const d = new Date(isoDate);
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+        const tmr = new Date(now);
+        tmr.setDate(now.getDate() + 1);
+        const isTomorrow = d.toDateString() === tmr.toDateString();
+        const hm = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        if (isToday) return `Aujourd'hui • ${hm}`;
+        if (isTomorrow) return `Demain • ${hm}`;
+        return `${d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} • ${hm}`;
+      } catch {
+        return 'Programmé';
+      }
+    }
+
+    // =========================================================================
+    // 2b. FLUX ESPN
+    // =========================================================================
+    async function fetchJson(url, timeoutMs = 9000) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+        if (!res.ok) { const err = new Error(`HTTP ${res.status}`); err.status = res.status; throw err; }
+        return { json: await res.json(), res };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function parseLiveMinute(st) {
+      if ((st.type?.name || '') === 'STATUS_HALFTIME') return 45;
+      const mt = /(\d+)\s*'?\s*(?:\+\s*(\d+))?/.exec(String(st.displayClock || ''));
+      if (mt) return Math.min(120, Number(mt[1]) + Number(mt[2] || 0));
+      if (typeof st.clock === 'number' && st.clock > 0) return Math.floor(st.clock / 60);
+      return null;
+    }
+
+    function extractEspnOdds(comp, sport) {
+      const o = Array.isArray(comp.odds) ? comp.odds[0] : null;
+      if (!o) return null;
+      const ml = o.moneyline || {};
+      const pick = (a, b, c) => toDec(a) ?? toDec(b) ?? toDec(c);
+      const H = pick(o.homeTeamOdds?.moneyLine, ml.home?.close?.odds, o.homeTeamOdds?.decimal);
+      const A = pick(o.awayTeamOdds?.moneyLine, ml.away?.close?.odds, o.awayTeamOdds?.decimal);
+      const D = sport === 'Football' ? pick(o.drawOdds?.moneyLine, ml.draw?.close?.odds, o.drawOdds?.decimal) : null;
+      if (!H || !A || (sport === 'Football' && !D)) return null;
+      const inv = 1 / H + 1 / A + (D ? 1 / D : 0);
+      if (inv < 0.97 || inv > 1.30) return null;   // cotes incohérentes → ignorées
+      return { H, D, A, provider: o.provider?.name || 'Marché ESPN', ou: Number(o.overUnder) || null };
+    }
+
+    function espnCompetitions(ev) {
+      if (Array.isArray(ev.competitions) && ev.competitions.length) return ev.competitions;
+      const out = [];
+      (ev.groupings || []).forEach(g => {
+        const label = String(g.grouping?.displayName || g.grouping?.slug || '').toLowerCase();
+        if (label.includes('double')) return;
+        (g.competitions || []).forEach(c => out.push(c));
+      });
+      return out;
+    }
+
+    function buildOutcomes(sport, homeLabel, awayLabel, odds, bookName) {
+      const keys = sport === 'Football' ? ['1', 'N', '2'] : ['1', '2'];
+      const labels = sport === 'Football' ? [homeLabel, 'Match Nul', awayLabel] : [homeLabel, awayLabel];
+      const probs = devigPower(odds);
+      return odds.map((o, i) => ({ key: keys[i], label: labels[i], prob: probs[i], fair: 1 / probs[i], bookOdd: o, bookName }));
+    }
+
+    function parseEspnEvents(data, feedMeta) {
+      const events = Array.isArray(data?.events) ? data.events : [];
+      const results = [];
+      const isTennis = feedMeta.sport === 'Tennis';
+      const num = v => (v !== undefined && v !== null && v !== '' && !isNaN(Number(v))) ? Number(v) : null;
+
+      events.forEach(ev => {
+        espnCompetitions(ev).forEach(comp => {
+          if (!comp || !Array.isArray(comp.competitors) || comp.competitors.length < 2) return;
+          const homeComp = comp.competitors.find(c => c.homeAway === 'home') || comp.competitors[0];
+          const awayComp = comp.competitors.find(c => c.homeAway === 'away') || comp.competitors[1];
+          const nameOf = (c, fb) => c.team?.shortDisplayName || c.team?.displayName || c.athlete?.displayName || fb;
+          const home = nameOf(homeComp, 'Domicile');
+          const away = nameOf(awayComp, 'Extérieur');
+
+          const st = comp.status || ev.status || {};
+          const statusState = st.type?.state || 'pre';
+          const liveClock = st.type?.shortDetail || st.type?.detail || '';
+          // Reporté / annulé / abandonné : jamais noté. Prolongation, tirs au but, abandon tennis : le score final
+          // n'est pas le résultat à 90 min (marché 1N2) → jamais noté non plus.
+          const sName = String(st.type?.name || '');
+          const sTxt = `${sName} ${st.type?.detail || ''} ${st.type?.shortDetail || ''}`;
+          const isVoid = statusState === 'post' && (/POSTPONED|CANCEL|ABANDON|SUSPEND|FORFEIT|NO_CONTEST/i.test(sName) || st.type?.completed === false);
+          const noGrade = isVoid || (statusState === 'post' && /(?:^|[^A-Z])(?:AET|PENS?|EXTRA\w*|SHOOTOUT|WALKOVER|RETIRED)(?:[^A-Z]|$)/i.test(sTxt));
+
+          let homeScore = null, awayScore = null;
+          if (statusState !== 'pre' && !isVoid) {
+            if (isTennis) {
+              const sets = c => Array.isArray(c.linescores) && c.linescores.length ? c.linescores.filter(l => l.winner).length : (c.winner ? 1 : 0);
+              homeScore = sets(homeComp); awayScore = sets(awayComp);
+              if (statusState === 'post' && homeScore === awayScore) { homeScore = homeComp.winner ? 1 : 0; awayScore = awayComp.winner ? 1 : 0; }
+            } else {
+              homeScore = num(homeComp.score); awayScore = num(awayComp.score);
+            }
+          }
+
+          const od = extractEspnOdds(comp, feedMeta.sport);
+          const outcomes = od
+            ? buildOutcomes(feedMeta.sport, home, away, feedMeta.sport === 'Football' ? [od.H, od.D, od.A] : [od.H, od.A], od.provider)
+            : [];
+
+          const baseId = `espn-${feedMeta.league.replace(/\s+/g, '').toLowerCase()}-${ev.id}`;
+          const kickoff = comp.date || ev.date || null;
+
+          results.push({
+            id: isTennis ? `${baseId}-${comp.id || results.length}` : baseId,
+            source: 'espn',
+            sport: feedMeta.sport,
+            league: feedMeta.league,
+            statusState,
+            liveClock,
+            liveMinute: feedMeta.sport === 'Football' && statusState === 'in' ? parseLiveMinute(st) : null,
+            livePeriod: st.period || null,
+            liveClockStr: st.displayClock || '',
+            homeScore,
+            awayScore,
+            homeForm: translateFormFR(homeComp.form || ''),
+            awayForm: translateFormFR(awayComp.form || ''),
+            homeRecord: homeComp.records?.[0]?.summary || '',
+            awayRecord: awayComp.records?.[0]?.summary || '',
+            time: isVoid ? 'Reporté / Annulé' : formatKickoffTimeFR(kickoff, statusState, liveClock),
+            isVoid,
+            noGrade,
+            kickoffIso: kickoff,
+            home,
+            away,
+            hasRealOdds: outcomes.length >= 2,
+            oddsProvider: od ? od.provider : 'Non publié',
+            bookCount: od ? 1 : 0,
+            sharpCount: 0,
+            xgHome: null,
+            xgAway: null,
+            realOuLine: od?.ou || null,
+            steam: false,
+            deltaProbPct: 0,
+            probHistory: [],
+            outcomes
+          });
+        });
+      });
+      return results;
+    }
+
+    async function fetchEspnAll() {
+      const now = Date.now();
+      const from = ymd(new Date(now - 3 * 86400e3));   // 3 jours : un résultat n'est pas perdu si l'app reste fermée un jour ou deux
+      const to = ymd(new Date(now + 3 * 86400e3));
+      const settled = await Promise.allSettled(ESPN_FEEDS.map(async feed => {
+        const url = feed.url + (feed.ranged ? `?dates=${from}-${to}&limit=300` : '');
+        const { json, res } = await fetchJson(url);
+        return { feed, matches: parseEspnEvents(json, feed), cached: res.headers.get('x-oe-cache') === 'hit' };
+      }));
+      const matches = [], failed = new Set();
+      let ok = 0, cachedCount = 0;
+      settled.forEach((r, i) => {
+        if (r.status === 'fulfilled') { ok++; if (r.value.cached) cachedCount++; matches.push(...r.value.matches); }
+        else failed.add(ESPN_FEEDS[i].league);
+      });
+      if (!ok) throw new Error('ESPN indisponible');
+      state.feedFailures = failed.size;
+      return { matches, failed, allCached: cachedCount === ok };
+    }
+
+    // =========================================================================
+    // 2c. THE ODDS API (consensus pondéré, quota protégé)
+    // =========================================================================
+    function parseOddsApiEvents(events, sp) {
+      const isFoot = sp.sport === 'Football';
+      const out = [];
+      events.forEach(ev => {
+        let books = [];
+        (ev.bookmakers || []).forEach(bk => {
+          const mk = (bk.markets || []).find(m => m.key === 'h2h');
+          if (!mk) return;
+          const o = mk.outcomes || [];
+          const oH = o.find(x => x.name === ev.home_team)?.price;
+          const oA = o.find(x => x.name === ev.away_team)?.price;
+          const oD = isFoot ? o.find(x => x.name === 'Draw')?.price : null;
+          if (!(oH > 1 && oA > 1) || (isFoot && !(oD > 1))) return;
+          const odds = isFoot ? [oH, oD, oA] : [oH, oA];
+          books.push({ key: bk.key, title: bk.title, odds, probs: devigPower(odds), w: SHARP_BOOKS[bk.key] || 1,
+            updated: Date.parse(mk.last_update || bk.last_update || '') || 0 });
+        });
+        if (!books.length) return;
+
+        // Cotes périmées : en direct > 5 min, avant-match > 6 h (on garde tout si moins de 2 bookmakers restent)
+        const isLiveEv = new Date(ev.commence_time) <= new Date();
+        const maxAge = isLiveEv ? 5 * 60e3 : 6 * 3600e3;
+        const fresh = books.filter(b => !b.updated || Date.now() - b.updated <= maxAge);
+        if (fresh.length >= 2) books = fresh;
+
+        // Rejet des cotes périmées / aberrantes (écart > 6 pts vs médiane)
+        if (books.length >= 4) {
+          const med = median(books.map(b => b.probs[0]));
+          const kept = books.filter(b => Math.abs(b.probs[0] - med) <= 0.06);
+          if (kept.length >= 3) books = kept;
+        }
+
+        const n = books[0].odds.length;
+        const wsum = books.reduce((a, b) => a + b.w, 0);
+        let probs = Array.from({ length: n }, (_, i) => books.reduce((a, b) => a + b.w * b.probs[i], 0) / wsum);
+        const ps = probs.reduce((a, b) => a + b, 0);
+        probs = probs.map(p => p / ps);
+
+        const keys = isFoot ? ['1', 'N', '2'] : ['1', '2'];
+        const labels = isFoot ? [ev.home_team, 'Match Nul', ev.away_team] : [ev.home_team, ev.away_team];
+        const outcomes = probs.map((p, i) => {
+          let best = 0, bestBook = '';
+          books.forEach(b => { if (b.odds[i] > best) { best = b.odds[i]; bestBook = b.title; } });
+          return { key: keys[i], label: labels[i], prob: p, fair: 1 / p, bookOdd: best, bookName: bestBook };
+        });
+
+        const started = new Date(ev.commence_time) <= new Date();
+        out.push({
+          id: `oddsapi-${ev.id}`,
+          source: 'oddsapi',
+          sport: sp.sport,
+          league: sp.league,
+          statusState: started ? 'in' : 'pre',
+          liveClock: started ? 'EN COURS' : '',
+          liveMinute: null, livePeriod: null, liveClockStr: '',
+          homeScore: null, awayScore: null,
+          homeForm: '', awayForm: '', homeRecord: '', awayRecord: '',
+          time: formatKickoffTimeFR(ev.commence_time, started ? 'in' : 'pre', 'EN COURS'),
+          kickoffIso: ev.commence_time || null,
+          home: ev.home_team,
+          away: ev.away_team,
+          hasRealOdds: true,
+          oddsProvider: `Consensus ${books.length} bookmakers`,
+          bookCount: books.length,
+          sharpCount: books.filter(b => b.w > 1).length,
+          xgHome: null, xgAway: null, realOuLine: null,
+          steam: false, deltaProbPct: 0, probHistory: [],
+          outcomes
+        });
+      });
+      return out;
+    }
+
+    async function fetchTheOddsApiMatches(apiKey) {
+      const SPORTS = [
+        { key: 'soccer_uefa_nations_league', league: 'Ligue des Nations', sport: 'Football' },
+        { key: 'soccer_france_ligue_one', league: 'Ligue 1', sport: 'Football' },
+        { key: 'soccer_uefa_champs_league', league: 'Champions League', sport: 'Football' },
+        { key: 'soccer_epl', league: 'Premier League', sport: 'Football' },
+        { key: 'soccer_spain_la_liga', league: 'La Liga', sport: 'Football' },
+        { key: 'soccer_italy_serie_a', league: 'Serie A', sport: 'Football' },
+        { key: 'soccer_germany_bundesliga', league: 'Bundesliga', sport: 'Football' },
+        { key: 'soccer_uefa_europa_league', league: 'Europa League', sport: 'Football' },
+        { key: 'basketball_nba', league: 'NBA', sport: 'Basketball' }
+      ];
+      const k = encodeURIComponent(apiKey);
+      let active = null;
+      try {   // la liste des sports en saison ne consomme pas de quota
+        const { json } = await fetchJson(`https://api.the-odds-api.com/v4/sports/?apiKey=${k}`);
+        if (Array.isArray(json)) active = new Set(json.filter(s => s.active).map(s => s.key));
+      } catch (e) { if (e.status === 401 || e.status === 403) throw e; }
+
+      let list = SPORTS.filter(s => !active || active.has(s.key));
+      // /events est gratuit (hors quota) : on n'interroge /odds que pour les compétitions ayant un match dans les ~3 jours
+      const horizon = Date.now() + 80 * 3600e3, floor = Date.now() - 4 * 3600e3;
+      const checked = await Promise.all(list.map(async sp => {
+        try {
+          const { json } = await fetchJson(`https://api.the-odds-api.com/v4/sports/${sp.key}/events?apiKey=${k}&dateFormat=iso`);
+          if (Array.isArray(json)) {
+            const soon = json.some(e => { const t = Date.parse(e.commence_time); return t < horizon && t > floor; });
+            return soon ? sp : null;
+          }
+        } catch (e) { if (e.status === 401 || e.status === 403) throw e; }
+        return sp;     // doute → on interroge quand même
+      }));
+      list = checked.filter(Boolean);
+      const remaining = [];
+      const settled = await Promise.allSettled(list.map(async sp => {
+        const { json, res } = await fetchJson(`https://api.the-odds-api.com/v4/sports/${sp.key}/odds/?apiKey=${k}&regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso`);
+        const rem = res.headers.get('x-requests-remaining');
+        if (rem !== null && !isNaN(Number(rem))) remaining.push(Number(rem));
+        return Array.isArray(json) ? parseOddsApiEvents(json, sp) : [];
+      }));
+      if (remaining.length) state.quotaRemaining = String(Math.min(...remaining));
+      if (!list.length) return [];
+      const ok = settled.filter(r => r.status === 'fulfilled');
+      if (!ok.length && settled.length) throw settled[0].reason || new Error('Odds API indisponible');
+      return ok.flatMap(r => r.value);
+    }
+
+    async function getOddsMatches(force) {
+      const key = (state.oddsApiKey || '').trim();
+      if (key.length < 16) { state.oddsError = ''; return []; }
+      const tag = key.slice(-4);
+      const c = state.oddsCache;
+      // Quota presque épuisé : on espace les rafraîchissements (1 h) plutôt que de tomber à zéro en milieu de journée
+      const lowQuota = state.quotaRemaining !== null && Number(state.quotaRemaining) < 60;
+      const fresh = c && c.tag === tag && Date.now() - c.ts < (lowQuota ? 3600e3 : ODDS_MIN_REFRESH_MS);
+      if (!force && fresh) return c.matches;
+      try {
+        const matches = await fetchTheOddsApiMatches(key);
+        state.oddsCache = { tag, ts: Date.now(), matches };
+        state.oddsError = '';
+        try { localStorage.setItem(ODDS_CACHE_KEY, JSON.stringify(state.oddsCache)); } catch {}
+        return matches;
+      } catch (e) {
+        state.oddsError = e.status === 401 || e.status === 403 ? 'Clé refusée' : e.status === 429 ? 'Quota épuisé' : 'Erreur réseau';
+        return (c && c.tag === tag && Date.now() - c.ts < ODDS_MAX_AGE_MS) ? c.matches : [];
+      }
+    }
+
+    function mergeSources(espnMatches, oddsMatches) {
+      const merged = espnMatches.slice();
+      oddsMatches.forEach(om0 => {
+        const om = JSON.parse(JSON.stringify(om0));
+        const t0 = new Date(om.kickoffIso).getTime();
+        const near = e => e.source === 'espn' && e.sport === om.sport && !e._oddsMerged &&
+          Math.abs(new Date(e.kickoffIso).getTime() - t0) <= 4 * 3600e3;
+        let em = merged.find(e => near(e) && teamsMatch(e.home, om.home) && teamsMatch(e.away, om.away));
+        let swapped = false;
+        if (!em) { em = merged.find(e => near(e) && teamsMatch(e.home, om.away) && teamsMatch(e.away, om.home)); swapped = !!em; }
+        if (!em) { merged.push(om); return; }
+
+        let outs = om.outcomes;
+        if (swapped) outs = outs.map(o => o.key === '1' ? { ...o, key: '2' } : o.key === '2' ? { ...o, key: '1' } : o).sort((a, b) => ({ '1': 0, 'N': 1, '2': 2 }[a.key] - { '1': 0, 'N': 1, '2': 2 }[b.key]));
+        em.outcomes = outs.map(o => o.key === '1' ? { ...o, label: em.home } : o.key === '2' ? { ...o, label: em.away } : o);
+        em.oddsProvider = om.oddsProvider;
+        em.bookCount = om.bookCount;
+        em.sharpCount = om.sharpCount;
+        em.hasRealOdds = true;
+        em._oddsMerged = true;
+      });
+      return merged;
+    }
+
+    // Snapshots de marché, xG calibrés sur les cotes, cotes "pré-match" figées pour le live
+    function finalizeMatches(list) {
+      list.forEach(m => {
+        const outs = m.outcomes || [];
+        m.hasRealOdds = outs.length >= 2;
+        if (!m.hasRealOdds) {
+          m.steam = false; m.deltaProbPct = 0; m.probHistory = state.snapshots[m.id] || [];
+          m.xgHome = null; m.xgAway = null;
+          return;
+        }
+        const pre = beforeKickoff(m);
+        const snap = recordProbSnapshot(m.id, outs[0].fair, pre);
+        m.steam = snap.isSteam; m.deltaProbPct = snap.deltaProbPct; m.probHistory = snap.probHistory;
+
+        const pg = state.pregame[m.id];
+        if (!pre) {
+          // Match commencé / terminé : on ne réajuste JAMAIS sur les cotes actuelles (elles intègrent déjà le score,
+          // les rejouer compterait le score deux fois). Sans relevé d'avant-match, pas de modèle en direct.
+          if (pg) {
+            m.pregameProbs = pg.p;
+            if (pg.xgH) { m.xgHome = pg.xgH; m.xgAway = pg.xgA; }
+          } else { m.xgHome = null; m.xgAway = null; }
+          return;
+        }
+        if (m.sport === 'Football' && outs.length === 3) {
+          const knownTotal = m.realOuLine ? m.realOuLine + 0.1 : null;
+          const fit = fitXgAuto(outs.map(o => o.prob), knownTotal, LEAGUE_GOALS[m.league] || 2.65);
+          m.xgHome = fit.xgH; m.xgAway = fit.xgA;
+        }
+        state.pregame[m.id] = { p: outs.map(o => o.prob), xgH: m.xgHome, xgA: m.xgAway, ts: Date.now() };
+      });
+      const cutoff = Date.now() - 4 * 86400e3;
+      Object.keys(state.pregame).forEach(id => { if ((state.pregame[id].ts || 0) < cutoff) delete state.pregame[id]; });
+      try { localStorage.setItem(PREGAME_KEY, JSON.stringify(state.pregame)); } catch {}
+      const ids = new Set(list.map(m => m.id));
+      const keys = Object.keys(state.snapshots);
+      if (keys.length > 160) keys.filter(k => !ids.has(k)).forEach(k => delete state.snapshots[k]);
+    }
+
+    // =========================================================================
+    // 3. MOTEUR DE PROBABILITÉ : MARCHÉ DÉ-MARGÉ + MODÈLE LIVE + KELLY SUR EV RÉELLE
+    // =========================================================================
+    const _aiCache = new WeakMap();
+    function analyzeMatchWithAI(match) {
+      const gen = state.aiWeights?.generation || 1;
+      const hit = _aiCache.get(match);
+      if (hit && hit.gen === gen) return hit.ai;
+      const ai = computeAnalysis(match);
+      _aiCache.set(match, { gen, ai });
+      return ai;
+    }
+
+    // Probabilités en direct : Poisson sur le temps restant (foot) / marche gaussienne (NBA)
+    function computeLiveProbs(m, marketP) {
+      if (m.statusState !== 'in' || m.homeScore === null || m.awayScore === null) return null;
+      const pre = m.pregameProbs;
+      if (!pre) return null;     // sans relevé d'avant-match : pas de modèle (voir finalizeMatches)
+      if (m.sport === 'Football' && m.xgHome && m.xgAway && m.liveMinute !== null) {
+        // Arrêts de jeu de la 1re mi-temps : le temps restant ne diminue pas au-delà de 45'
+        const minute = m.livePeriod === 1 ? Math.min(m.liveMinute, 45) : m.liveMinute;
+        const left = Math.max(0.03, (90 - Math.min(minute, 90)) / 90);
+        const mx = scoreMatrix(m.xgHome * left, m.xgAway * left, 8, 0);
+        let pH = 0, pD = 0, pA = 0, pO = 0, best = { p: 0, s: '' };
+        mx.cells.forEach(c => {
+          const fh = m.homeScore + c.h, fa = m.awayScore + c.a;
+          if (fh > fa) pH += c.p; else if (fh === fa) pD += c.p; else pA += c.p;
+          if (fh + fa > 2.5) pO += c.p;
+          if (c.p > best.p) best = { p: c.p, s: `${fh} - ${fa}` };
+        });
+        return { probs: [pH, pD, pA], over25: pO, score: best.s, note: `${m.homeScore}-${m.awayScore} à ${m.liveMinute}'` };
+      }
+      if (m.sport === 'Basketball' && m.livePeriod && m.liveClockStr) {
+        const cm = /(\d+):(\d+)/.exec(m.liveClockStr);
+        // ESPN affiche « 45.3 » (secondes) sous la minute restante
+        const clockMin = cm ? Number(cm[1]) + Number(cm[2]) / 60 : (/^\s*\d+(\.\d+)?\s*$/.test(m.liveClockStr) ? Number(m.liveClockStr) / 60 : 0);
+        const minsLeft = m.livePeriod <= 4 ? (4 - m.livePeriod) * 12 + clockMin : clockMin;
+        const frac = clamp(minsLeft / 48, 0, 1);
+        const mu = (logit(pre[0]) / 1.702) * 12;           // marge attendue pré-match (pts)
+        const sigma = Math.max(1.5, 12 * Math.sqrt(frac));
+        const lead = m.homeScore - m.awayScore;
+        const pH = clamp(normCdf((lead + mu * frac) / sigma), 0.01, 0.99);
+        return { probs: [pH, 1 - pH], over25: null, score: null, note: `${m.homeScore}-${m.awayScore}, ${Math.round(minsLeft)} min restantes` };
+      }
+      return null;
+    }
+
+    function computeAnalysis(match) {
+      const w = state.aiWeights || DEFAULT_AI_WEIGHTS;
+      const temp = Math.max(0.75, w.temperature || 1.0);
+      const wForm = w.wForm !== undefined ? w.wForm : 0.20;
+      const outs = match.outcomes || [];
+
+      if (match.hasRealOdds && outs.length >= 2) {
+        const three = outs.length === 3;
+        let marketP = outs.map(o => o.prob ?? (1 / Math.max(1.01, o.fair)));
+        const ms = marketP.reduce((a, b) => a + b, 0);
+        marketP = marketP.map(p => p / ms);
+
+        let base = marketP.slice();
+        let modelKind = 'Marché dé-margé';
+        let liveInfo = null;
+        const scoreH = computeFormScore(match.homeForm);
+        const scoreA = computeFormScore(match.awayForm);
+
+        liveInfo = computeLiveProbs(match, marketP);
+        if (liveInfo) {
+          const pre0 = match.pregameProbs || marketP;
+          base = liveInfo.probs.map((p, i) => 0.95 * p + 0.05 * (pre0[i] ?? p));   // couverture : cartons rouges, blessures, etc. non modélisés
+          modelKind = 'Modèle en direct';
+        } else if (match.statusState === 'pre') {
+          const nH = (match.homeForm || '').replace(/[^VND]/g, '').length;
+          const nA = (match.awayForm || '').replace(/[^VND]/g, '').length;
+          if (FORM_TWEAK_ENABLED && nH >= 3 && nA >= 3) {     // micro-ajustement plafonné à ±2 pts
+            const d = clamp((scoreH - scoreA) * wForm * 0.06, -0.02, 0.02);
+            const last = base.length - 1;
+            base[0] = Math.max(0.02, base[0] + d);
+            base[last] = Math.max(0.02, base[last] - d);
+            const s = base.reduce((a, b) => a + b, 0);
+            base = base.map(p => p / s);
+            modelKind = 'Marché + forme';
+          }
+        }
+
+        const e = 1 / temp;
+        let cal = base.map(p => Math.pow(Math.max(1e-6, p), e));
+        const cs = cal.reduce((a, b) => a + b, 0);
+        cal = cal.map(p => p / cs);
+
+        const probs = outs.map((o, i) => ({
+          ...o,
+          probPct: Number((cal[i] * 100).toFixed(1)),
+          baseProbPct: Number((base[i] * 100).toFixed(1)),
+          marketPct: Number((marketP[i] * 100).toFixed(1))
+        }));
+
+        const sorted = [...probs].sort((a, b) => b.probPct - a.probPct);
+        const topPick = sorted[0];
+        const runnerUp = sorted[1] || { probPct: 0 };
+        const marginGap = topPick.probPct - runnerUp.probPct;
+        const isLive = match.statusState === 'in';
+        const isPost = match.statusState === 'post';
+
+        // --- Pièges (pré-match uniquement) ---
+        let trapScore = 0;
+        const trapReasons = [];
+        if (match.statusState === 'pre') {
+          if (topPick.probPct < 50 && marginGap < 12) { trapScore += 35; trapReasons.push(`Match très serré (${topPick.probPct}% vs ${runnerUp.probPct}%)`); }
+          const dp = match.deltaProbPct || 0;
+          if ((topPick.key === '1' && dp <= -2.5) || (topPick.key === '2' && dp >= 2.5)) { trapScore += 35; trapReasons.push(`Recul de cote détecté (${dp}%)`); }
+          if (match.homeForm && match.awayForm) {
+            if ((topPick.key === '1' && scoreA > scoreH + 0.35) || (topPick.key === '2' && scoreH > scoreA + 0.35)) { trapScore += 30; trapReasons.push(`L'outsider possède une meilleure série récente`); }
+          }
+        }
+        const isTrapMatch = match.statusState === 'pre' && trapScore >= 50;
+
+        // --- Valeur réelle = espérance de gain (EV) au meilleur prix vs probabilité du modèle ---
+        const evs = probs.map((o, i) => ({ o, i, ev: cal[i] * Number(o.bookOdd || 0) - 1 }));
+        const bestEv = evs.reduce((a, b) => (b.ev > a.ev ? b : a));
+        const consensusOk = (match.bookCount || 1) >= 3;     // pas de "value" sur un seul bookmaker (artefact de marge)
+        const valuePick = (!isLive && !isPost && consensusOk && !isTrapMatch &&
+          bestEv.ev >= 0.03 && bestEv.ev <= 0.35 && bestEv.o.probPct >= 12) ? bestEv.o : null;
+
+        const kp = valuePick || topPick;
+        const kIdx = probs.findIndex(o => o.key === kp.key);
+        const kOdd = Number(kp.bookOdd || kp.fair);
+        const kP = cal[kIdx];
+        const kEv = kP * kOdd - 1;
+        const b = Math.max(0.01, kOdd - 1);
+        const fullKelly = Math.max(0, (b * kP - (1 - kP)) / b);
+        const stakePct = valuePick ? Number(Math.min(5, fullKelly * 0.25 * 100).toFixed(1)) : 0;
+        const stakeEur = Number((state.paperBankroll * stakePct / 100).toFixed(2));
+        const bookOdd = Number(topPick.bookOdd || topPick.fair);
+
+        // --- Score probable / Over 2,5 / BTTS ---
+        let predictedScore = null, over25Pct = null, bttsPct = null;
+        if (match.sport === 'Football') {
+          if (liveInfo) { predictedScore = liveInfo.score; over25Pct = Math.round(liveInfo.over25 * 100); }
+          else if (match.xgHome && match.xgAway) {
+            const mx = scoreMatrix(match.xgHome, match.xgAway, 8);
+            const bc = mx.cells.reduce((a, c) => (c.p > a.p ? c : a), { p: 0, h: 1, a: 1 });
+            predictedScore = `${bc.h} - ${bc.a}`;
+            over25Pct = Math.round(mx.O25 * 100);
+            bttsPct = Math.round(mx.BTTS * 100);
+          }
+        }
+
+        const confidenceLevel = topPick.probPct >= 62 ? 'high' : topPick.probPct >= 50 ? 'med' : 'low';
+        const confidenceLabel = confidenceLevel === 'high' ? 'Favori Solide' : confidenceLevel === 'med' ? 'Avantage Marché' : 'Rencontre Indécise';
+        const pickName = topPick.key === 'N' ? 'Match nul' : 'Victoire ' + topPick.label;
+        const dataQuality = (match.bookCount || 1) >= 4 ? 'high' : (match.bookCount || 1) >= 2 ? 'med' : 'single';
+
+        let verdict;
+        if (isTrapMatch) verdict = `⚠️ Vigilance : ${trapReasons.join(' • ')}.`;
+        else if (liveInfo) verdict = `${pickName} à ${topPick.probPct}% — modèle en direct (${liveInfo.note}).`;
+        else if (isLive) verdict = `${pickName} à ${topPick.probPct}% (dernières cotes publiées ; modèle de score indisponible faute de relevé d'avant-match).`;
+        else verdict = `${pickName} estimée à ${topPick.probPct}% (cote ${bookOdd.toFixed(2)}${dataQuality === 'single' ? ', 1 source' : ', ' + match.bookCount + ' sources'}).`;
+
+        return {
+          hasData: true, probs, topPick, runnerUp, marginGap,
+          confidenceLevel, confidenceLabel, isTrapMatch, trapReason: trapReasons.join(' • '),
+          isValueBet: !!valuePick, valuePick,
+          valueEdgePct: Number((kEv * 100).toFixed(1)),
+          bookOdd,
+          quarterKellyPct: stakePct,
+          recommendedStakeEur: stakeEur,
+          kelly: { label: kp.key === 'N' ? 'Match Nul' : kp.label, odd: kOdd, book: kp.bookName || '', evPct: Number((kEv * 100).toFixed(1)), stakePct, stakeEur, isValue: !!valuePick },
+          predictedScore, over25Pct, bttsPct, modelKind, dataQuality,
+          verdictSentence: verdict
+        };
+      }
+
+      // --- Pas de cotes : estimation prudente sur le bilan officiel ---
+      const wrH = parseRecordWinRate(match.homeRecord, match.sport);
+      const wrA = parseRecordWinRate(match.awayRecord, match.sport);
+      const fH = computeFormScore(match.homeForm);
+      const fA = computeFormScore(match.awayForm);
+
+      if (wrH !== null && wrA !== null) {
+        const rawH = Math.max(0.15, wrH + 0.05 + fH * 0.1);
+        const rawA = Math.max(0.15, wrA + fA * 0.1);
+        const sum = rawH + rawA + (match.sport === 'Football' ? 0.26 : 0);
+        const p1 = Number(((rawH / sum) * 100).toFixed(1));
+        const p2 = Number(((rawA / sum) * 100).toFixed(1));
+        const pN = match.sport === 'Football' ? Number((100 - p1 - p2).toFixed(1)) : null;
+        const probs = match.sport === 'Football'
+          ? [
+              { key: '1', label: match.home, probPct: p1, fair: Number((100 / p1).toFixed(2)) },
+              { key: 'N', label: 'Match Nul', probPct: pN, fair: Number((100 / pN).toFixed(2)) },
+              { key: '2', label: match.away, probPct: p2, fair: Number((100 / p2).toFixed(2)) }
+            ]
+          : [
+              { key: '1', label: match.home, probPct: p1, fair: Number((100 / p1).toFixed(2)) },
+              { key: '2', label: match.away, probPct: p2, fair: Number((100 / p2).toFixed(2)) }
+            ];
+        const sorted = [...probs].sort((a, b) => b.probPct - a.probPct);
+        return {
+          hasData: true, statsOnly: true, probs, topPick: sorted[0], runnerUp: sorted[1],
+          marginGap: sorted[0].probPct - sorted[1].probPct,
+          confidenceLevel: 'low', confidenceLabel: 'Basé sur Bilan Saison',
+          isTrapMatch: false, trapReason: '', isValueBet: false, valuePick: null, valueEdgePct: 0,
+          bookOdd: null, quarterKellyPct: 0, recommendedStakeEur: 0, kelly: null,
+          predictedScore: null, over25Pct: null, bttsPct: null, modelKind: 'Bilan saison', dataQuality: 'none',
+          verdictSentence: `Cotes bookmakers non publiées. Estimation calculée sur les bilans officiels (${match.homeRecord} vs ${match.awayRecord}).`
+        };
+      }
+
+      return {
+        hasData: false, probs: [], topPick: null, confidenceLevel: 'none', confidenceLabel: 'Cotes en attente',
+        isTrapMatch: false, isValueBet: false, valuePick: null, valueEdgePct: 0, kelly: null,
+        verdictSentence: 'Les bookmakers n’ont pas encore publié de cotes ni de bilan statistique pour cette rencontre.'
+      };
+    }
+
+    // =========================================================================
+    // 4. AUDIT RÉEL & CALIBRATION (prédictions figées AVANT le coup d'envoi)
+    // =========================================================================
+    function syncAutomatedAudit(matches) {
+      let newlyVerified = 0;
+      let changed = false;
+      const now = Date.now();
+
+      matches.forEach(m => {
+        const ai = analyzeMatchWithAI(m);
+        if (!ai.hasData || !ai.topPick || ai.statsOnly) return;
+
+        // Dernière prédiction pré-match = référence auditée (jamais de prédiction prise en direct)
+        if (beforeKickoff(m)) {
+          const prev = state.prePredictions[m.id];
+          if (!prev || prev.pickKey !== ai.topPick.key || Math.abs(prev.probPct - ai.topPick.probPct) >= 0.1) {
+            state.prePredictions[m.id] = {
+              id: m.id, sport: m.sport, league: m.league,
+              match: `${m.home} vs ${m.away}`,
+              pickKey: ai.topPick.key,
+              aiPick: ai.topPick.key === 'N' ? 'Match Nul' : `Victoire ${ai.topPick.label}`,
+              probPct: ai.topPick.probPct,
+              baseProbPct: ai.topPick.baseProbPct ?? ai.topPick.probPct,
+              bookOdd: ai.bookOdd,
+              ts: now,
+              savedAt: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+            };
+            changed = true;
+          }
+        }
+
+        if (m.statusState === 'post' && m.noGrade) {          // reporté / annulé / prolongation / tirs au but : non noté
+          if (state.prePredictions[m.id]) { delete state.prePredictions[m.id]; changed = true; }
+        } else if (m.statusState === 'post' && m.homeScore !== null && m.awayScore !== null) {
+          const snap = state.prePredictions[m.id];
+          if (snap && !state.verifiedHistory.some(v => v.id === m.id)) {
+            const actual = m.homeScore > m.awayScore ? '1' : m.homeScore < m.awayScore ? '2' : 'N';
+            state.verifiedHistory.unshift({
+              id: m.id, date: snap.savedAt, sport: snap.sport, league: snap.league, match: snap.match,
+              pickKey: snap.pickKey, aiPick: snap.aiPick, probPct: snap.probPct, baseProbPct: snap.baseProbPct,
+              bookOdd: snap.bookOdd, score: `${m.homeScore} - ${m.awayScore}`, hit: snap.pickKey === actual
+            });
+            delete state.prePredictions[m.id];
+            newlyVerified++;
+            changed = true;
+          }
+        }
+      });
+
+      // Purge des prédictions orphelines (> 10 jours)
+      Object.keys(state.prePredictions).forEach(id => {
+        if (now - (state.prePredictions[id].ts || now) > 10 * 86400e3) { delete state.prePredictions[id]; changed = true; }
+      });
+
+      if (changed) saveAuditState();
+      if (newlyVerified > 0) {
+        recalibrateFromRealHistory();
+        showToast('Audit Live Mis à Jour', `${newlyVerified} résultat(s) officiel(s) vérifié(s).`);
+      }
+    }
+
+    // Calibration : on cherche la température qui minimise le Brier sur l'historique,
+    // avec un a priori fort vers 1.0 (évite le sur-apprentissage sur petit échantillon).
+    function recalibrateFromRealHistory() {
+      const hist = state.verifiedHistory.slice(0, 300);
+      const n = hist.length;
+      if (n < 10) return;
+      let bestT = 1, bestLoss = Infinity;
+      for (let t = 0.8; t <= 1.3001; t += 0.02) {
+        const e = 1 / t;
+        let loss = 0;
+        hist.forEach(h => {
+          const p = clamp((h.baseProbPct ?? h.probPct ?? 55) / 100, 0.01, 0.99);
+          const q = Math.pow(p, e) / (Math.pow(p, e) + Math.pow(1 - p, e));
+          loss += (q - (h.hit ? 1 : 0)) ** 2;
+        });
+        loss = loss / n + (2 / (n + 20)) * (t - 1) ** 2;
+        if (loss < bestLoss) { bestLoss = loss; bestT = t; }
+      }
+      bestT = Number(bestT.toFixed(3));
+      if (Math.abs(bestT - (state.aiWeights.temperature || 1)) >= 0.01) {
+        state.aiWeights.temperature = bestT;
+        state.aiWeights.generation = (state.aiWeights.generation || 1) + 1;
+        saveWeightsState();
+        updateAiGenBadge();
+      }
+    }
+
+    function computeModelMetrics() {
+      const list = state.verifiedHistory || [];
+      if (!list.length) return { accPct: null, highAccPct: null, brier: null, total: 0 };
+      const hits = list.filter(x => x.hit).length;
+      const accPct = Number(((hits / list.length) * 100).toFixed(1));
+      const highList = list.filter(x => (x.probPct || 0) >= 60);
+      const highAccPct = highList.length ? Number(((highList.filter(x => x.hit).length / highList.length) * 100).toFixed(1)) : null;
+      const brierSum = list.reduce((acc, item) => {
+        const p = clamp((item.probPct || 55) / 100, 0.01, 0.99);
+        return acc + Math.pow(p - (item.hit ? 1 : 0), 2);
+      }, 0);
+      return { accPct, highAccPct, brier: Number((brierSum / list.length).toFixed(3)), total: list.length };
+    }
+
+    // =========================================================================
+    // 5. SYNCHRONISATION RÉSEAU (temps réel adaptatif)
+    // =========================================================================
+    function hasLiveMatches() { return MATCHES_DATA.some(m => m.statusState === 'in'); }
+    function effectiveInterval() {
+      const base = state.autoSyncSeconds || 0;
+      if (!base) return 0;
+      return hasLiveMatches() ? Math.min(base, 30) : base;   // 30 s max d'écart quand un match est en direct
+    }
+
+    async function syncLiveFeeds(userTriggered = false, forceOdds = false) {
+      if (state.syncing) { if (forceOdds) state.queuedForceOdds = true; return; }
+      state.syncing = true;
+      const spin = document.getElementById('sync-spin-icon');
+      if (spin) spin.classList.add('animate-spin');
+
+      try {
+        const [espn, odds] = await Promise.all([
+          fetchEspnAll(),
+          getOddsMatches(forceOdds).catch(() => [])
+        ]);
+
+        let list = mergeSources(espn.matches, odds);
+        if (espn.failed.size && MATCHES_DATA.length) {       // une ligue en échec ne disparaît pas de l'écran
+          MATCHES_DATA.filter(m => m.source === 'espn' && espn.failed.has(m.league)).forEach(m => {
+            if (!list.some(x => x.id === m.id)) list.push(m);
+          });
+        }
+        if (!list.length) throw new Error('Aucun match retourné');
+
+        finalizeMatches(list);
+        const order = { in: 0, pre: 1, post: 2 };
+        list.sort((a, b) => ((order[a.statusState] ?? 1) - (order[b.statusState] ?? 1)) ||
+          (new Date(a.kickoffIso || 0) - new Date(b.kickoffIso || 0)));
+
+        syncAutomatedAudit(list);          // audit & paris virtuels sur la liste complète
+        evaluatePaperBets(list);
+
+        MATCHES_DATA = list.filter(m => !(m.statusState === 'post' && m.kickoffIso && Date.now() - new Date(m.kickoffIso).getTime() > 20 * 3600e3));
+        state.feedSource = odds.length ? 'The Odds API + ESPN (Cotes Réelles)' : 'Flux Public ESPN Live';
+        state.lastSyncedAt = new Date();
+        state.offline = false;
+        state.swStale = espn.allCached;
+        saveSnapshots();
+        checkPinnedMatchLiveShifts(MATCHES_DATA);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ matches: MATCHES_DATA, ts: Date.now(), source: state.feedSource })); } catch {}
+        if (userTriggered) showToast('Données Synchronisées', `${MATCHES_DATA.length} rencontres réelles récupérées.`);
+      } catch {
+        try {
+          const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+          if (cached?.matches?.length && !MATCHES_DATA.length) {
+            MATCHES_DATA = cached.matches;
+            state.feedSource = `Cache (${cached.source})`;
+            state.lastSyncedAt = new Date(cached.ts);
+          } else if (!MATCHES_DATA.length) {
+            state.feedSource = 'Hors-ligne';
+          }
+        } catch { if (!MATCHES_DATA.length) state.feedSource = 'Hors-ligne'; }
+        state.offline = true;
+        if (userTriggered) showToast('Réseau Indisponible', 'Données affichées = dernier relevé connu.');
+      } finally {
+        state.syncing = false;
+        if (spin) spin.classList.remove('animate-spin');
+        state.countdownRemaining = effectiveInterval() || state.autoSyncSeconds || 60;
+        if (!state.focusedMatchId || !MATCHES_DATA.some(m => m.id === state.focusedMatchId)) {
+          state.focusedMatchId = MATCHES_DATA[0]?.id || '';
+        }
+        updateFeedStatusUI();
+        renderMatches();
+        renderSidebarSummary();
+        renderAiAutoCombo();
+        if (state.activeTab === 'accuracy') renderAccuracyTab();
+        if (state.queuedForceOdds) { state.queuedForceOdds = false; setTimeout(() => syncLiveFeeds(false, true), 50); }
+      }
+    }
+
+    function ageLabel(ts) {
+      const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+      return s < 60 ? `${s}s` : s < 3600 ? `${Math.round(s / 60)} min` : `${Math.round(s / 3600)} h`;
+    }
+
+    function updateFeedStatusUI() {
+      const t = state.lastSyncedAt;
+      const timeStr = t ? t.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--';
+      const interval = effectiveInterval() || 60;
+      const stale = state.offline || state.swStale || (t && (Date.now() - t.getTime()) / 1000 > Math.max(180, interval * 3));
+      const pill = document.getElementById('live-feed-pill-text');
+      const dot = document.getElementById('live-status-dot');
+      const diagSrc = document.getElementById('diag-source');
+      const diagUpd = document.getElementById('diag-updated');
+      const quotaBadge = document.getElementById('odds-api-quota-badge');
+      const net = document.getElementById('network-status-badge');
+
+      const shortSrc = state.feedSource.includes('Odds API') ? 'Odds API Pro' : state.feedSource.startsWith('Cache') ? 'Cache' : 'ESPN Live';
+      if (pill) pill.textContent = `${shortSrc} • ${timeStr}${stale ? ' • données différées' : ''}`;
+      if (dot) dot.className = `inline-block w-1.5 h-1.5 rounded-full shrink-0 ${stale ? 'bg-rose-400' : 'bg-cyan-400 animate-pulse'}`;
+      if (net) {
+        net.className = `flex items-center gap-1.5 font-mono text-[10px] shrink-0 ${stale ? 'text-rose-400' : 'text-emerald-400'}`;
+        net.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${stale ? 'bg-rose-400' : 'bg-emerald-400 animate-pulse'}"></span><span>${stale ? 'Différé' : hasLiveMatches() ? 'Direct' : 'À jour'}${t ? ' • ' + ageLabel(t.getTime()) : ''}</span>`;
+      }
+      if (diagSrc) diagSrc.textContent = `Source : ${state.feedSource}${state.oddsCache ? ` • cotes il y a ${ageLabel(state.oddsCache.ts)}` : ''}${state.feedFailures ? ` • ${state.feedFailures} flux ligue en échec` : ''}`;
+      if (diagUpd) diagUpd.textContent = `Mis à jour : ${timeStr}`;
+      if (quotaBadge) {
+        quotaBadge.textContent = state.oddsError
+          ? state.oddsError
+          : state.quotaRemaining !== null ? `Quota : ${state.quotaRemaining}` : (state.oddsApiKey ? 'Clé active' : 'Clé : Non définie');
+      }
+    }
+
+    // =========================================================================
+    // 6. RENDU INTERFACE (CARTES, KELLY, POISSON & COMBINÉS)
+    // =========================================================================
+    function getKickoffBadge(m) {
+      if (m.statusState === 'in') {
+        return `<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/45 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>DIRECT ${m.homeScore ?? 0}-${m.awayScore ?? 0} (${esc(m.liveClock)})</span>`;
+      }
+      if (m.isVoid) {
+        return `<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-orange-500/15 text-orange-300 border border-orange-500/35">REPORTÉ / ANNULÉ</span>`;
+      }
+      if (m.statusState === 'post') {
+        return `<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-slate-500/20 text-slate-300 border border-slate-500/35">TERMINÉ ${m.homeScore ?? 0}-${m.awayScore ?? 0}</span>`;
+      }
+      return `<span class="text-[11px] font-mono text-slate-400">${m.time}</span>`;
+    }
+
+    function buildSparklineSVG(points, isSteam) {
+      if (!points || points.length < 2) return '';
+      const vals = points.map(x => x.p);
+      const min = Math.min(...vals), max = Math.max(...vals);
+      const span = Math.max(0.5, max - min);
+      const w = 64, h = 20;
+      const coords = vals.map((v, i) => {
+        const x = (i / (vals.length - 1)) * (w - 6) + 3;
+        const y = h - 3 - ((v - min) / span) * (h - 6);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const stroke = isSteam ? '#FBBF24' : '#22D3EE';
+      return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="overflow-visible"><polyline fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${coords}" /></svg>`;
+    }
+
+    function renderMatches() {
+      let highConfCount = 0, steamCount = 0, valueCount = 0;
+      MATCHES_DATA.forEach(m => {
+        const ai = analyzeMatchWithAI(m);
+        if (ai.hasData && ai.topPick.probPct >= 58) highConfCount++;
+        if (m.steam || ai.isTrapMatch) steamCount++;
+        if (ai.isValueBet) valueCount++;
+      });
+
+      document.getElementById('kpi-high-conf').textContent = highConfCount;
+      document.getElementById('kpi-steam-count').textContent = steamCount;
+      document.getElementById('kpi-value-count').textContent = valueCount;
+      document.getElementById('kpi-total-matches').textContent = MATCHES_DATA.length;
+      document.getElementById('pinned-count-badge').textContent = state.pinnedMatchIds.length;
+      document.getElementById('value-count-badge').textContent = valueCount;
+
+      const filtered = MATCHES_DATA.filter(m => {
+        if (state.pinnedOnly && !state.pinnedMatchIds.includes(m.id)) return false;
+        if (state.leagueFilter === 'LIVE' && m.statusState !== 'in') return false;
+        if (state.leagueFilter !== 'ALL' && state.leagueFilter !== 'LIVE' && esc(m.league) !== state.leagueFilter) return false;
+        if (state.searchQuery) {
+          const hay = `${m.home} ${m.away} ${m.league} ${m.sport}`.toLowerCase();
+          if (!hay.includes(state.searchQuery)) return false;
+        }
+        const ai = analyzeMatchWithAI(m);
+        if (state.highConfOnly && (!ai.hasData || ai.topPick.probPct < 58)) return false;
+        if (state.trapOrSteamOnly && !m.steam && !ai.isTrapMatch) return false;
+        if (state.valueOnly && !ai.isValueBet) return false;
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        const pinA = state.pinnedMatchIds.includes(a.id) ? 0 : 1;
+        const pinB = state.pinnedMatchIds.includes(b.id) ? 0 : 1;
+        if (pinA !== pinB) return pinA - pinB;
+
+        const aiA = analyzeMatchWithAI(a);
+        const aiB = analyzeMatchWithAI(b);
+        if (state.sortMode === 'value') return (aiB.valueEdgePct || -99) - (aiA.valueEdgePct || -99);
+        if (state.sortMode === 'conf') return (aiB.topPick?.probPct || 0) - (aiA.topPick?.probPct || 0);
+        if (state.sortMode === 'time') {
+          const tA = a.kickoffIso ? new Date(a.kickoffIso).getTime() : 9e15;
+          const tB = b.kickoffIso ? new Date(b.kickoffIso).getTime() : 9e15;
+          return tA - tB;
+        }
+        return 0;
+      });
+
+      const container = document.getElementById('matches-container');
+      if (!filtered.length) {
+        container.innerHTML = `<div class="glass-card rounded-3xl p-8 text-center text-xs text-slate-400">Aucune rencontre trouvée pour cette sélection ou connexion en cours.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(m => {
+        const ai = analyzeMatchWithAI(m);
+        const isFocused = m.id === state.focusedMatchId;
+        const isPinned = state.pinnedMatchIds.includes(m.id);
+
+        const barColors = m.outcomes.length === 3
+          ? ['bg-gradient-to-r from-cyan-400 to-indigo-400', 'bg-slate-500', 'bg-indigo-500']
+          : ['bg-gradient-to-r from-cyan-400 to-indigo-400', 'bg-indigo-500'];
+
+        return `
+          <article onclick="triggerHaptic('light'); focusMatchInSidebar('${m.id}')" class="cursor-pointer glass-card rounded-3xl p-3.5 sm:p-5 space-y-3 transition ${isFocused ? 'border-cyan-400/70 ring-1 ring-cyan-400/30' : isPinned ? 'border-amber-400/45' : 'hover:border-slate-300/25'}">
+            <!-- En-tête de carte -->
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-1.5 min-w-0">
+                <button onclick="triggerHaptic('medium'); togglePinMatch('${m.id}', event)" class="h-8 w-8 rounded-xl text-xs font-bold flex items-center justify-center transition ${isPinned ? 'bg-amber-400/20 text-amber-300 border border-amber-400/45' : 'bg-white/[0.05] text-slate-400 border border-white/[0.08]'}">
+                  ${isPinned ? '★' : '☆'}
+                </button>
+                <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-500/15 text-indigo-200 border border-indigo-400/25">${esc(m.league)}</span>
+                ${getKickoffBadge(m)}
+                ${ai.isValueBet ? `<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-extrabold bg-amber-400/25 text-amber-300 border border-amber-400/50">⭐ VALUE +${ai.valueEdgePct}%</span>` : ''}
+                ${ai.isTrapMatch ? `<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-extrabold bg-orange-500/20 text-orange-300 border border-orange-500/45">⚠️ PIÈGE</span>` : ''}
+              </div>
+
+              <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                ${m.probHistory.length >= 2 ? `
+                  <div class="flex items-center gap-1">
+                    <span class="text-[10px] font-mono text-slate-400">${m.probHistory[0].p.toFixed(0)}%→${m.probHistory[m.probHistory.length - 1].p.toFixed(0)}%</span>
+                    ${buildSparklineSVG(m.probHistory, m.steam)}
+                  </div>
+                ` : ''}
+                ${(m.sport === 'Football' && m.xgHome) || m.probHistory.length >= 2 ? `
+                  <button onclick="openInspectModal('${m.id}')" class="h-8 px-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/35 text-[11px] font-bold text-cyan-200 transition">
+                    📊 Détail
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- Affiche & Séries Réelles ESPN -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div class="min-w-0">
+                <h3 class="text-[15px] sm:text-lg font-extrabold text-white tracking-tight leading-snug break-words">${esc(m.home)} <span class="text-slate-500 font-normal">vs</span> ${esc(m.away)}</h3>
+                <div class="flex flex-wrap items-center gap-2 text-[10px] font-mono text-slate-400 mt-0.5">
+                  ${m.homeForm ? `<span>Forme Dom : <strong class="text-slate-200">${m.homeForm}</strong></span>` : ''}
+                  ${m.awayForm ? `<span>• Forme Ext : <strong class="text-slate-200">${m.awayForm}</strong></span>` : ''}
+                  ${m.homeRecord && m.awayRecord ? `<span>Bilan : ${m.homeRecord} vs ${m.awayRecord}</span>` : ''}
+                  <span>• Source : ${esc(m.oddsProvider)}</span>
+                </div>
+              </div>
+              <span class="self-start sm:self-center shrink-0 px-2.5 py-1 rounded-xl text-[10px] font-bold border ${ai.hasData ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/35' : 'bg-white/[0.05] text-slate-400 border-white/[0.1]'}">
+                ${ai.confidenceLabel}
+              </span>
+            </div>
+
+            <!-- Verdict & Issues -->
+            ${ai.hasData ? `
+              <div class="rounded-2xl bg-gradient-to-r from-cyan-500/[0.12] via-indigo-500/[0.08] to-transparent border border-cyan-400/30 p-3 space-y-1.5">
+                <div class="flex flex-wrap items-center justify-between gap-1.5">
+                  <span class="text-xs font-extrabold text-white">
+                    🎯 <span class="text-cyan-300">${ai.topPick.key === 'N' ? 'Match Nul' : 'Victoire ' + esc(ai.topPick.label)} (${ai.topPick.probPct}%)</span>
+                  </span>
+                  ${ai.predictedScore ? `<span class="px-2 py-0.5 rounded bg-white/[0.07] font-mono text-[10px] text-slate-200">Poisson : <strong class="text-cyan-300">${ai.predictedScore}</strong> (+2,5 : ${ai.over25Pct}%)</span>` : ''}
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">${esc(ai.verdictSentence)}</p>
+              </div>
+
+              <div class="space-y-2">
+                <div class="w-full h-2 rounded-full bg-[#0B0F19] overflow-hidden flex gap-0.5 p-[1px] border border-white/[0.08]">
+                  ${ai.probs.map((o, idx) => `<div class="h-full ${barColors[idx]} first:rounded-l-full last:rounded-r-full" style="width: ${o.probPct}%"></div>`).join('')}
+                </div>
+                <div class="grid ${ai.probs.length === 3 ? 'grid-cols-3' : 'grid-cols-2'} gap-1.5 sm:gap-2">
+                  ${ai.probs.map(o => {
+                    const isBest = o.key === ai.topPick.key;
+                    return `
+                      <div class="rounded-2xl bg-[#0B0F19]/90 border ${isBest ? 'border-cyan-400/50 bg-cyan-500/[0.07]' : 'border-white/[0.08]'} px-2.5 py-2 flex items-center justify-between gap-1 min-w-0">
+                        <div class="min-w-0">
+                          <span class="text-[11px] font-bold ${isBest ? 'text-white' : 'text-slate-300'} block truncate">${esc(o.label)}</span>
+                          ${!state.friendlyMode && o.bookOdd ? `<span class="text-[10px] font-mono text-indigo-300 block truncate">Cote : ${o.bookOdd.toFixed(2)}</span>` : ''}
+                        </div>
+                        <span class="font-mono text-xs sm:text-sm font-extrabold ${isBest ? 'text-cyan-300' : 'text-slate-300'} shrink-0">
+                          ${o.probPct.toFixed(0)}%
+                        </span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : `
+              <div class="rounded-2xl bg-[#0B0F19] border border-white/[0.07] p-3 text-[11px] text-slate-400">
+                ${esc(ai.verdictSentence)}
+              </div>
+            `}
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderSidebarSummary() {
+      const focusBox = document.getElementById('ai-focus-card');
+      const topList = document.getElementById('top-predictions-sidebar');
+      if (!MATCHES_DATA.length) {
+        focusBox.innerHTML = `<p class="text-xs text-slate-400">En attente des données en direct...</p>`;
+        topList.innerHTML = '';
+        return;
+      }
+
+      const focused = MATCHES_DATA.find(m => m.id === state.focusedMatchId) || MATCHES_DATA[0];
+      const fAi = analyzeMatchWithAI(focused);
+
+      focusBox.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono font-bold uppercase text-emerald-400">Focus Match</span>
+          <span class="text-[10px] font-mono text-slate-400">${esc(focused.league)}</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-white">${esc(focused.home)} vs ${esc(focused.away)}</h3>
+        ${fAi.hasData ? `
+          <div class="rounded-xl bg-emerald-500/15 border border-emerald-500/35 p-2.5">
+            <span class="text-[10px] text-emerald-300 uppercase font-bold block">Issue la Plus Probable</span>
+            <p class="text-sm font-extrabold text-white mt-0.5">
+              ${fAi.topPick.key === 'N' ? 'Match Nul' : 'Victoire ' + esc(fAi.topPick.label)} — <span class="font-mono text-emerald-400">${fAi.topPick.probPct}%</span>
+            </p>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">${esc(fAi.verdictSentence)}</p>
+
+          <!-- Critère de Kelly sur espérance de gain réelle -->
+          ${fAi.kelly ? `
+            <div class="rounded-xl bg-white/[0.03] border border-white/[0.08] p-2.5 space-y-1 font-mono text-[11px]">
+              <div class="flex justify-between gap-2">
+                <span class="text-slate-400 shrink-0">Meilleur prix :</span>
+                <strong class="text-white text-right truncate">${fAi.kelly.odd.toFixed(2)} ${fAi.kelly.book ? `(${esc(fAi.kelly.book)})` : ''}</strong>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Espérance (EV) :</span>
+                <strong class="${fAi.kelly.evPct > 0 ? 'text-emerald-400' : 'text-slate-400'}">${fAi.kelly.evPct > 0 ? '+' : ''}${fAi.kelly.evPct}%</strong>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Qualité données :</span>
+                <strong class="text-slate-200">${fAi.dataQuality === 'high' ? 'Consensus fort' : fAi.dataQuality === 'med' ? 'Consensus' : '1 bookmaker'}</strong>
+              </div>
+              <div class="flex justify-between pt-1 border-t border-white/[0.06]">
+                <span class="text-cyan-300">Mise 1/4 Kelly :</span>
+                <strong class="text-cyan-300">${fAi.kelly.isValue ? `${fAi.quarterKellyPct}% (${fAi.recommendedStakeEur.toFixed(2)} €)` : 'Aucune — pas de value'}</strong>
+              </div>
+            </div>
+          ` : ''}
+
+          ${focused.sport === 'Football' && focused.xgHome ? `
+            <button onclick="openMatchInPoissonLab('${focused.id}')" class="w-full min-h-[38px] py-2 px-3 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/35 text-indigo-200 font-bold text-xs transition">
+              ⚽ Charger dans le Labo Poisson →
+            </button>
+          ` : ''}
+        ` : `<p class="text-xs text-slate-400">${esc(fAi.verdictSentence)}</p>`}
+      `;
+
+      const ranked = MATCHES_DATA
+        .filter(m => m.statusState !== 'post')
+        .map(m => ({ m, ai: analyzeMatchWithAI(m) }))
+        .filter(x => x.ai.hasData && x.ai.topPick)
+        .sort((a, b) => b.ai.topPick.probPct - a.ai.topPick.probPct)
+        .slice(0, 3);
+
+      topList.innerHTML = ranked.map(({ m, ai }, i) => `
+        <button onclick="focusMatchInSidebar('${m.id}')" class="w-full text-left rounded-2xl bg-[#080B12] hover:bg-white/[0.04] border border-white/[0.08] p-2.5 flex items-center justify-between gap-2 transition">
+          <div class="min-w-0">
+            <span class="text-[10px] font-mono text-slate-400 block truncate">#${i + 1} • ${esc(m.league)}</span>
+            <p class="text-xs font-extrabold text-white truncate">${esc(m.home)} vs ${esc(m.away)}</p>
+            <span class="text-[11px] text-emerald-400 font-semibold">${ai.topPick.key === 'N' ? 'Match Nul' : esc(ai.topPick.label)}</span>
+          </div>
+          <span class="shrink-0 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 font-mono font-extrabold text-xs">
+            ${ai.topPick.probPct.toFixed(0)}%
+          </span>
+        </button>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 7. MODALE DE DÉTAIL (POISSON & COURBE HORODATÉE DES COTES)
+    // =========================================================================
+    function factorial(n) { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
+    function poissonProb(k, lambda) { return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k); }
+
+    function buildPoissonResults(xgH, xgA) {
+      const mx = scoreMatrix(xgH, xgA, 8);
+      const top = [...mx.cells].sort((a, b) => b.p - a.p).slice(0, 6);
+      return `
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center font-mono">
+            <div class="rounded-xl bg-[#080B12] border border-emerald-500/35 p-2">
+              <span class="text-[9px] text-slate-400 block">Domicile</span>
+              <strong class="text-sm text-emerald-400">${(mx.H * 100).toFixed(1)}%</strong>
+            </div>
+            <div class="rounded-xl bg-[#080B12] border border-white/[0.08] p-2">
+              <span class="text-[9px] text-slate-400 block">Nul</span>
+              <strong class="text-sm text-white">${(mx.D * 100).toFixed(1)}%</strong>
+            </div>
+            <div class="rounded-xl bg-[#080B12] border border-blue-500/35 p-2">
+              <span class="text-[9px] text-slate-400 block">Extérieur</span>
+              <strong class="text-sm text-blue-400">${(mx.A * 100).toFixed(1)}%</strong>
+            </div>
+            <div class="rounded-xl bg-[#080B12] border border-violet-500/35 p-2">
+              <span class="text-[9px] text-violet-300 block">+2,5 Buts</span>
+              <strong class="text-sm text-violet-200">${(mx.O25 * 100).toFixed(1)}%</strong>
+            </div>
+            <div class="rounded-xl bg-[#080B12] border border-violet-500/35 p-2">
+              <span class="text-[9px] text-violet-300 block">LDEM Oui</span>
+              <strong class="text-sm text-violet-200">${(mx.BTTS * 100).toFixed(1)}%</strong>
+            </div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Scores Exacts les Plus Probables</span>
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 font-mono">
+              ${top.map((s, idx) => `
+                <div class="rounded-xl ${idx === 0 ? 'bg-emerald-500/20 border-emerald-400' : 'bg-white/[0.03] border-white/[0.08]'} border p-2 text-center">
+                  <strong class="text-xs text-white block">${s.h} - ${s.a}</strong>
+                  <span class="text-[11px] text-emerald-400 font-bold">${(s.p * 100).toFixed(1)}%</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>`;
+    }
+
+    function buildPoissonHTML(prefix, homeName, awayName, xgH, xgA) {
+      return `
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-3">
+              <div class="flex justify-between text-xs font-bold mb-1.5">
+                <span class="text-white truncate">xG ${esc(homeName)}</span>
+                <span id="${prefix}-xgh-val" class="font-mono text-emerald-400">${xgH.toFixed(2)}</span>
+              </div>
+              <input type="range" min="0.3" max="3.5" step="0.05" value="${xgH}" oninput="updatePoissonLab('${prefix}',null,null,this.value,null)" class="w-full h-8" />
+            </div>
+            <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-3">
+              <div class="flex justify-between text-xs font-bold mb-1.5">
+                <span class="text-white truncate">xG ${esc(awayName)}</span>
+                <span id="${prefix}-xga-val" class="font-mono text-blue-400">${xgA.toFixed(2)}</span>
+              </div>
+              <input type="range" min="0.3" max="3.5" step="0.05" value="${xgA}" oninput="updatePoissonLab('${prefix}',null,null,null,this.value)" class="w-full h-8" />
+            </div>
+          </div>
+          <div id="${prefix}-pz-results" class="space-y-4">${buildPoissonResults(xgH, xgA)}</div>
+        </div>`;
+    }
+
+    function updatePoissonLab(prefix, home, away, newH, newA) {
+      const st = poissonState[prefix];
+      if (!st) return;
+      const sliding = (newH !== null && newH !== undefined) || (newA !== null && newA !== undefined);
+      if (newH !== null && newH !== undefined) st.xgH = parseFloat(newH);
+      if (newA !== null && newA !== undefined) st.xgA = parseFloat(newA);
+      const res = document.getElementById(`${prefix}-pz-results`);
+      if (sliding && res) {       // mise à jour partielle : le curseur tenu au doigt n'est jamais recréé
+        res.innerHTML = buildPoissonResults(st.xgH, st.xgA);
+        const eh = document.getElementById(`${prefix}-xgh-val`), ea = document.getElementById(`${prefix}-xga-val`);
+        if (eh) eh.textContent = st.xgH.toFixed(2);
+        if (ea) ea.textContent = st.xgA.toFixed(2);
+        return;
+      }
+      const target = prefix === 'insp' ? document.getElementById('insp-pz-host') : document.getElementById('standalone-poisson-container');
+      if (target) target.innerHTML = buildPoissonHTML(prefix, home || st.homeName || 'Domicile', away || st.awayName || 'Extérieur', st.xgH, st.xgA);
+    }
+
+    function openInspectModal(matchId) {
+      const m = MATCHES_DATA.find(x => x.id === matchId);
+      if (!m) return;
+      document.getElementById('insp-league').textContent = `${m.league} • ${m.time}`;
+      document.getElementById('insp-title').textContent = `${m.home} vs ${m.away}`;
+
+      let historyHtml = '';
+      if (m.probHistory && m.probHistory.length >= 2) {
+        historyHtml = `
+          <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-3.5 space-y-2">
+            <span class="text-[10px] font-mono font-bold uppercase text-cyan-300 block">Historique des Relevés de Marché (${esc(m.home)})</span>
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 font-mono text-xs">
+              ${m.probHistory.map(pt => `
+                <div class="px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] shrink-0 text-center">
+                  <strong class="text-white block">${pt.p}%</strong>
+                  <span class="text-[9px] text-slate-400">${esc(pt.t)}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      poissonState.insp = { xgH: m.xgHome || 1.5, xgA: m.xgAway || 1.2, homeName: m.home, awayName: m.away };
+      const poissonHtml = (m.sport === 'Football' && m.xgHome)
+        ? buildPoissonHTML('insp', m.home, m.away, poissonState.insp.xgH, poissonState.insp.xgA)
+        : '';
+
+      document.getElementById('insp-body').innerHTML = historyHtml + `<div id="insp-pz-host">${poissonHtml}</div>`;
+      document.getElementById('inspect-modal').classList.remove('hidden');
+    }
+
+    function closeInspectModal() { document.getElementById('inspect-modal').classList.add('hidden'); }
+
+    function openMatchInPoissonLab(matchId) {
+      const m = MATCHES_DATA.find(x => x.id === matchId);
+      if (!m) return;
+      poissonState.lab = { homeName: esc(m.home), awayName: esc(m.away), xgH: m.xgHome || 1.5, xgA: m.xgAway || 1.2 };
+      switchTab('poisson');
+    }
+
+    // =========================================================================
+    // 8. COMBINÉS & PAPER TRADING RÉEL
+    // =========================================================================
+    function buildAiGeneratedCombo() {
+      const k = state.aiComboProfile === 'ambition' ? 4 : state.aiComboProfile === 'balanced' ? 3 : 2;
+      const minProb = state.aiComboProfile === 'safe' ? 58 : state.aiComboProfile === 'balanced' ? 50 : 45;
+
+      let pool = MATCHES_DATA
+        .filter(m => m.statusState === 'pre' && m.hasRealOdds)
+        .map(m => ({ m, ai: analyzeMatchWithAI(m) }))
+        .filter(x => x.ai.hasData && !x.ai.statsOnly && x.ai.topPick && x.ai.topPick.probPct >= minProb && !x.ai.isTrapMatch && x.ai.bookOdd > 1.05);
+      if (state.tonightOnly) pool = pool.filter(x => isSameLocalDay(x.m.kickoffIso));
+      pool.sort((a, b) => b.ai.topPick.probPct - a.ai.topPick.probPct);
+      pool = pool.slice(0, 14);
+      if (pool.length < k) return null;
+
+      // Toutes les combinaisons parmi les 14 meilleurs matchs (cote cible => nombre de sélections libre : 2 à 5)
+      const combos = [];
+      const target = state.targetOdd || 0;
+      const sizes = target > 0 ? [2, 3, 4, 5].filter(n => n <= pool.length) : [k];
+      let K = k;
+      const rec = (start, chosen) => {
+        if (chosen.length === K) {
+          const jp = chosen.reduce((a, x) => a * x.ai.topPick.probPct / 100, 1);
+          const odd = chosen.reduce((a, x) => a * x.ai.bookOdd, 1);
+          combos.push({ legs: chosen.slice(), jp, odd, ev: jp * odd - 1 });
+          return;
+        }
+        for (let i = start; i < pool.length; i++) { chosen.push(pool[i]); rec(i + 1, chosen); chosen.pop(); }
+      };
+      sizes.forEach(n => { K = n; rec(0, []); });
+      combos.forEach(c => {
+        if (target > 0) c.score = -Math.abs(Math.log(c.odd / target)) * 3 + c.jp;
+        else if (state.aiComboProfile === 'safe') c.score = c.jp;
+        else c.score = c.jp >= 0.06 ? c.ev + c.jp : -9;
+      });
+      combos.sort((a, b) => b.score - a.score);
+      const pick = combos[(state.aiComboVariantOffset || 0) % Math.min(combos.length, 12)];
+
+      return {
+        legs: pick.legs,
+        jointPct: Number((pick.jp * 100).toFixed(1)),
+        fairComboOdd: Number(pick.odd.toFixed(2)),
+        evPct: Number((pick.ev * 100).toFixed(1))
+      };
+    }
+
+    function renderAiAutoCombo() {
+      const box = document.getElementById('ai-auto-combo-body');
+      if (!box) return;
+      const combo = buildAiGeneratedCombo();
+      state.lastGeneratedCombo = combo;
+
+      if (!combo) {
+        box.innerHTML = `<div class="rounded-2xl bg-[#0B0F19] border border-white/[0.08] p-4 text-xs text-slate-400 text-center">Pas assez de matchs à venir avec cotes réelles confirmées pour ce profil.</div>`;
+        updatePotentialPayoutUI();
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="grid grid-cols-3 gap-2 font-mono text-center">
+          <div class="rounded-2xl bg-[#0B0F19] border border-cyan-400/35 p-3">
+            <span class="text-[10px] text-slate-400 block">Prob. Conjointe</span>
+            <strong class="text-base sm:text-xl font-extrabold text-cyan-300">${combo.jointPct}%</strong>
+          </div>
+          <div class="rounded-2xl bg-[#0B0F19] border border-white/[0.08] p-3">
+            <span class="text-[10px] text-slate-400 block">Sélections</span>
+            <strong class="text-base sm:text-xl font-extrabold text-white">${combo.legs.length}</strong>
+          </div>
+          <div class="rounded-2xl bg-[#0B0F19] border border-indigo-400/35 p-3">
+            <span class="text-[10px] text-slate-400 block">Cote Totale (meilleurs prix)</span>
+            <strong class="text-base sm:text-xl font-extrabold text-indigo-300">${combo.fairComboOdd}</strong>
+          </div>
+        </div>
+        <p class="text-[11px] font-mono text-center ${combo.evPct >= 0 ? 'text-emerald-400' : 'text-slate-400'}">Espérance de gain estimée : ${combo.evPct >= 0 ? '+' : ''}${combo.evPct}% par € misé</p>
+        <div class="space-y-2">
+          ${combo.legs.map(({ m, ai }, idx) => `
+            <div class="rounded-2xl bg-[#0B0F19] border border-white/[0.09] p-3 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <span class="text-[10px] font-mono text-slate-400 block">#${idx + 1} • ${esc(m.league)} • ${esc(m.time)}</span>
+                <p class="text-xs sm:text-sm font-extrabold text-white truncate">${esc(m.home)} vs ${esc(m.away)}</p>
+                <p class="text-[11px] font-bold text-cyan-300">🎯 ${ai.topPick.key === 'N' ? 'Match Nul' : 'Victoire ' + esc(ai.topPick.label)}</p>
+              </div>
+              <div class="shrink-0 text-right font-mono">
+                <span class="px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 font-extrabold text-xs block">${ai.topPick.probPct}%</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Cote ${ai.bookOdd.toFixed(2)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      updatePotentialPayoutUI();
+    }
+
+    function setAiComboProfile(p) {
+      state.aiComboProfile = p;
+      state.aiComboVariantOffset = 0;
+      document.querySelectorAll('.combo-prof-btn').forEach(b => {
+        b.className = b.dataset.comboProf === p
+          ? 'combo-prof-btn flex-1 sm:flex-none px-2.5 py-2 rounded-xl text-[11px] font-extrabold transition bg-cyan-400 text-obsidian'
+          : 'combo-prof-btn flex-1 sm:flex-none px-2.5 py-2 rounded-xl text-[11px] font-bold transition text-slate-300';
+      });
+      renderAiAutoCombo();
+    }
+
+    function setTargetOdd(odd) {
+      state.targetOdd = odd;
+      document.querySelectorAll('.target-odd-btn').forEach(b => {
+        b.className = parseFloat(b.dataset.targetOdd) === odd
+          ? 'target-odd-btn px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition bg-cyan-400 text-obsidian'
+          : 'target-odd-btn px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 border border-white/[0.07]';
+      });
+      renderAiAutoCombo();
+    }
+
+    function toggleTonightFilter() {
+      state.tonightOnly = !state.tonightOnly;
+      const btn = document.getElementById('btn-tonight-filter');
+      btn.className = state.tonightOnly
+        ? 'px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition bg-indigo-500/25 text-indigo-200 border border-indigo-400/50 flex items-center gap-1 shrink-0'
+        : 'px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 border border-white/[0.08] flex items-center gap-1 shrink-0';
+      renderAiAutoCombo();
+    }
+
+    function setComboStake(s) {
+      state.selectedStake = Number(s) || 10;
+      document.querySelectorAll('.combo-stake-btn').forEach(b => {
+        b.className = Number(b.dataset.stake) === state.selectedStake
+          ? 'combo-stake-btn px-2.5 py-1 rounded-xl text-xs font-extrabold transition bg-emerald-400 text-obsidian'
+          : 'combo-stake-btn px-2.5 py-1 rounded-xl text-xs font-bold transition bg-white/[0.05] text-slate-300 border border-white/[0.08]';
+      });
+      updatePotentialPayoutUI();
+    }
+
+    function updatePotentialPayoutUI() {
+      const payoutEl = document.getElementById('combo-potential-payout');
+      const profitEl = document.getElementById('combo-potential-profit');
+      const lbl = document.getElementById('btn-track-paper-label');
+      if (lbl) lbl.textContent = `Miser ${state.selectedStake}€`;
+      const c = state.lastGeneratedCombo;
+      if (!c) {
+        if (payoutEl) payoutEl.textContent = '-- €';
+        if (profitEl) profitEl.textContent = '(+--)';
+        return;
+      }
+      const payout = (state.selectedStake * c.fairComboOdd).toFixed(2);
+      const profit = (state.selectedStake * (c.fairComboOdd - 1)).toFixed(2);
+      payoutEl.textContent = `${payout} €`;
+      profitEl.textContent = `(+${profit} €)`;
+    }
+
+    function rerollAiCombo() {
+      state.aiComboVariantOffset = (state.aiComboVariantOffset || 0) + 1;
+      renderAiAutoCombo();
+    }
+
+    function copyAiAutoCombo() {
+      const c = state.lastGeneratedCombo;
+      if (!c) return;
+      const lines = c.legs.map(({ m, ai }, i) => `${i + 1}. ${m.home} vs ${m.away} → ${ai.topPick.label} [${ai.topPick.probPct}% • Cote ${ai.bookOdd.toFixed(2)}]`).join('\n');
+      const txt = `OddsEdge IA • Cote totale : ${c.fairComboOdd} (${c.jointPct}%)\n\n${lines}`;
+      const done = () => showToast('Copié', 'Combiné copié dans le presse-papiers.');
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => showToast('Erreur', 'Copie impossible.'));
+      else showToast('Erreur', 'Copie non supportée.');
+    }
+
+    function trackCurrentComboPaperBet() {
+      const c = state.lastGeneratedCombo;
+      if (!c) return;
+      const stake = state.selectedStake || 10;
+      state.paperBets.unshift({
+        id: `paper-${Date.now()}`,
+        date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        stake,
+        odds: c.fairComboOdd,
+        status: 'pending',
+        legs: c.legs.map(l => ({
+          matchId: l.m.id,
+          pick: l.ai.topPick.key === 'N' ? 'Nul' : l.ai.topPick.label,
+          pickKey: l.ai.topPick.key,
+          odd: l.ai.bookOdd,
+          kickoff: l.m.kickoffIso,
+          status: 'pending'
+        }))
+      });
+      savePaperTradingState();
+      renderPaperTrading();
+      showToast('Ticket Enregistré', `Mise virtuelle de ${stake}€ suivie en direct.`);
+    }
+
+    function evaluatePaperBets(matches) {
+      let changed = false;
+      state.paperBets.forEach(bet => {
+        if (bet.status !== 'pending') return;
+        let allDone = true, lost = false;
+        bet.legs.forEach(leg => {
+          if (leg.status === 'won' || leg.status === 'void') return;
+          const m = matches.find(x => x.id === leg.matchId);
+          if (m && m.statusState === 'post' && m.noGrade) {
+            leg.status = 'void';     // reporté / annulé / prolongation : résultat à 90 min non vérifiable → sélection annulée
+            if (leg.odd > 1) bet.odds = Number((bet.odds / leg.odd).toFixed(2));
+            changed = true;
+          } else if (m && m.statusState === 'post' && m.homeScore !== null && m.awayScore !== null) {
+            const res = m.homeScore > m.awayScore ? '1' : m.homeScore < m.awayScore ? '2' : 'N';
+            leg.status = res === leg.pickKey ? 'won' : 'lost';
+          } else if (!m && leg.kickoff && Date.now() - new Date(leg.kickoff).getTime() > 5 * 86400e3) {
+            leg.status = 'void';     // match disparu des flux (reporté/annulé) : sélection annulée
+            if (leg.odd > 1) bet.odds = Number((bet.odds / leg.odd).toFixed(2));
+            changed = true;
+          }
+          if (leg.status === 'lost') lost = true;
+          else if (leg.status === 'pending') allDone = false;
+        });
+        if (lost) { bet.status = 'lost'; changed = true; }
+        else if (allDone) {
+          bet.status = bet.legs.every(l => l.status === 'void') ? 'void' : 'won';
+          if (bet.status === 'void') bet.odds = 1;
+          changed = true;
+        }
+      });
+      if (changed) { savePaperTradingState(); renderPaperTrading(); }
+    }
+
+    function renderPaperTrading() {
+      const bets = state.paperBets || [];
+      const staked = bets.reduce((s, b) => s + b.stake, 0);
+      const returned = bets.reduce((s, b) => s + (b.status === 'won' ? b.stake * b.odds : b.status === 'void' ? b.stake : 0), 0);
+      const resolved = bets.filter(b => b.status !== 'pending');
+      const resolvedStaked = resolved.reduce((s, b) => s + b.stake, 0);
+      const profit = returned - resolvedStaked;
+      const bankroll = 1000 - staked + returned;
+      const roi = resolvedStaked > 0 ? (profit / resolvedStaked) * 100 : 0;
+      const decided = resolved.filter(b => b.status !== 'void');
+      const winRate = decided.length > 0 ? (bets.filter(b => b.status === 'won').length / decided.length) * 100 : 0;
+
+      state.paperBankroll = bankroll;
+      document.getElementById('paper-bankroll').textContent = `${bankroll.toFixed(2)} €`;
+      document.getElementById('paper-profit').textContent = `${profit >= 0 ? '+' : ''}${profit.toFixed(2)} €`;
+      document.getElementById('paper-roi').textContent = `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`;
+      document.getElementById('paper-winrate').textContent = `${winRate.toFixed(1)}%`;
+      document.getElementById('paper-bets-count').textContent = `${resolved.length}/${bets.length} terminés`;
+
+      const listEl = document.getElementById('paper-bets-list');
+      listEl.innerHTML = bets.length
+        ? bets.slice(0, 6).map(b => `
+            <div class="rounded-xl bg-[#080B12] border border-white/[0.07] p-2.5 flex items-center justify-between text-xs gap-2">
+              <div class="min-w-0">
+                <span class="text-[10px] font-mono text-slate-400">${b.date} • Cote ${b.odds} • ${b.stake}€</span>
+                <p class="text-white font-bold truncate">${b.legs.map(l => esc(l.pick)).join(' + ')}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded font-mono font-bold text-[10px] shrink-0 ${b.status === 'won' ? 'bg-emerald-500/20 text-emerald-300' : b.status === 'lost' ? 'bg-rose-500/20 text-rose-300' : 'bg-cyan-500/20 text-cyan-300'}">
+                ${b.status === 'won' ? 'GAGNÉ' : b.status === 'lost' ? 'PERDU' : b.status === 'void' ? 'ANNULÉ' : 'EN COURS'}
+              </span>
+            </div>
+          `).join('')
+        : `<p class="text-xs text-slate-500 text-center py-2">Aucun ticket enregistré.</p>`;
+    }
+
+    function resetPaperTrading() {
+      state.paperBankroll = 1000;
+      state.paperBets = [];
+      savePaperTradingState();
+      renderPaperTrading();
+    }
+
+    // =========================================================================
+    // 9. ONGLET AUDIT & NAVIGATION
+    // =========================================================================
+    function renderAccuracyTab() {
+      const m = computeModelMetrics();
+      document.getElementById('acc-global-rate').textContent = m.accPct !== null ? `${m.accPct}%` : '--%';
+      document.getElementById('acc-global-sample').textContent = `${m.total} match(s) vérifié(s)`;
+      document.getElementById('acc-high-rate').textContent = m.highAccPct !== null ? `${m.highAccPct}%` : '--%';
+      document.getElementById('acc-brier-score').textContent = m.brier !== null ? `${m.brier}` : '--';
+      document.getElementById('acc-auto-count').textContent = Object.keys(state.prePredictions).length;
+
+      document.getElementById('learn-epochs').textContent = `Gen #${state.aiWeights.generation || 1}`;
+      document.getElementById('learn-samples').textContent = `${m.total} match(s) audité(s)`;
+      const tNow = state.aiWeights.temperature || 1.0;
+      document.getElementById('learn-temp').textContent = tNow.toFixed(3);
+      const tn = document.getElementById('learn-temp-note');
+      if (tn) tn.textContent = m.total < 10 ? 'Actif dès 10 matchs' : tNow < 0.98 ? 'Confiance accrue' : tNow > 1.02 ? 'Confiance réduite' : 'Neutre';
+      const gapEl = document.getElementById('learn-home-bias');
+      if (gapEl) {
+        const hist = state.verifiedHistory || [];
+        if (hist.length >= 10) {
+          const meanP = hist.reduce((a, h) => a + (h.probPct || 0), 0) / hist.length;
+          const hitR = (hist.filter(h => h.hit).length / hist.length) * 100;
+          const gap = meanP - hitR;
+          gapEl.textContent = `${gap >= 0 ? '+' : ''}${gap.toFixed(1)} pt`;
+        } else gapEl.textContent = '--';
+      }
+
+      const list = document.getElementById('past-predictions-list');
+      if (!state.verifiedHistory.length) {
+        list.innerHTML = `<div class="rounded-2xl bg-[#080B12] border border-white/[0.07] p-4 text-xs text-slate-400 text-center">Aucun match suivi n'est encore terminé. L'audit s'alimente automatiquement dès qu'un match suivi atteint le coup de sifflet final.</div>`;
+        return;
+      }
+
+      list.innerHTML = state.verifiedHistory.map(p => `
+        <div class="rounded-2xl bg-[#080B12] border border-white/[0.08] p-3 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <span class="text-[10px] font-mono text-slate-400">${p.date} • ${esc(p.league)}</span>
+            <p class="text-xs sm:text-sm font-extrabold text-white truncate">${esc(p.match)} (${p.score})</p>
+            <p class="text-[11px] text-slate-300">Pronostic capturé : <strong>${esc(p.aiPick)} (${p.probPct}%)</strong></p>
+          </div>
+          <span class="shrink-0 px-2.5 py-1 rounded-xl font-mono font-extrabold text-xs ${p.hit ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}">
+            ${p.hit ? '✓ VALIDÉ' : '✕ ÉCART'}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function checkPinnedMatchLiveShifts(matches) {
+      state.pinnedMatchIds.forEach(id => {
+        const m = matches.find(x => x.id === id);
+        if (!m) return;
+        const ai = analyzeMatchWithAI(m);
+        if (!ai.hasData || !ai.topPick) return;
+        const currScore = `${m.homeScore ?? '-'}:${m.awayScore ?? '-'}`;
+        const prev = state.pinnedLiveBaseline[id];
+        if (prev && m.statusState === 'in' && prev.score !== currScore && currScore !== '-:-') {
+          const banner = document.getElementById('pinned-live-alert');
+          document.getElementById('pinned-live-alert-text').textContent = `Score en direct : ${m.home} ${currScore} ${m.away}`;
+          banner.classList.remove('hidden');
+        }
+        state.pinnedLiveBaseline[id] = { score: currScore };
+      });
+    }
+
+    function dismissPinnedAlert() { document.getElementById('pinned-live-alert').classList.add('hidden'); }
+    function togglePinMatch(id, ev) {
+      if (ev) ev.stopPropagation();
+      const idx = state.pinnedMatchIds.indexOf(id);
+      if (idx >= 0) state.pinnedMatchIds.splice(idx, 1);
+      else state.pinnedMatchIds.push(id);
+      saveState();
+      renderMatches();
+    }
+    function focusMatchInSidebar(id) { state.focusedMatchId = id; renderMatches(); renderSidebarSummary(); }
+    function setSearchQuery(val) {
+      state.searchQuery = val.trim().toLowerCase();
+      document.getElementById('clear-search-btn').classList.toggle('hidden', !state.searchQuery);
+      renderMatches();
+    }
+    function clearSearchQuery() { document.getElementById('match-search-input').value = ''; setSearchQuery(''); }
+    function setLeagueFilter(league) {
+      state.leagueFilter = league;
+      document.querySelectorAll('.league-pill').forEach(p => {
+        p.className = p.dataset.league === league
+          ? 'league-pill px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white text-obsidian shrink-0 transition'
+          : 'league-pill px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.07] shrink-0 transition';
+      });
+      renderMatches();
+    }
+    function toggleFilterFlag(flag) {
+      state[flag] = !state[flag];
+      const map = { pinnedOnly: 'btn-pinned-only', highConfOnly: 'btn-conf-only', trapOrSteamOnly: 'btn-steam-only', valueOnly: 'btn-value-only' };
+      const btn = document.getElementById(map[flag]);
+      if (btn) btn.classList.toggle('border-cyan-400', state[flag]);
+      renderMatches();
+    }
+    function setSortMode(mode) {
+      state.sortMode = mode;
+      document.querySelectorAll('.sort-pill').forEach(b => {
+        b.className = b.dataset.sort === mode
+          ? 'sort-pill px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition bg-white/10 text-white shrink-0'
+          : 'sort-pill px-2.5 py-1 rounded-xl text-[11px] font-bold transition bg-white/[0.04] text-slate-300 border border-white/[0.07] shrink-0';
+      });
+      renderMatches();
+    }
+    function toggleExperienceMode() {
+      state.friendlyMode = !state.friendlyMode;
+      saveState();
+      document.getElementById('mode-label').textContent = state.friendlyMode ? 'Lecture Simple' : 'Afficher Cotes';
+      renderMatches();
+    }
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      ['matches', 'sgp', 'poisson', 'accuracy'].forEach(id => {
+        document.getElementById(`view-${id}`)?.classList.toggle('hidden', id !== tabId);
+      });
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const active = btn.dataset.nav === tabId;
+        const isMob = btn.classList.contains('flex-col');
+        btn.className = isMob
+          ? (active ? 'nav-btn min-h-[48px] py-1.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-cyan-300 bg-cyan-500/15' : 'nav-btn min-h-[48px] py-1.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-slate-400')
+          : (active ? 'nav-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition bg-white text-obsidian shadow' : 'nav-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition text-slate-300 hover:text-white');
+      });
+      if (tabId === 'sgp') { renderAiAutoCombo(); renderPaperTrading(); }
+      if (tabId === 'poisson') updatePoissonLab('lab', poissonState.lab.homeName, poissonState.lab.awayName, null, null);
+      if (tabId === 'accuracy') renderAccuracyTab();
+    }
+    function updateAiGenBadge() { document.getElementById('ai-gen-badge').textContent = `GEN #${state.aiWeights.generation || 1}`; }
+    function openGlossaryModal() { document.getElementById('glossary-modal').classList.remove('hidden'); }
+    function closeGlossaryModal() { document.getElementById('glossary-modal').classList.add('hidden'); }
+    function openFeedModal() {
+      document.getElementById('feed-api-key-input').value = state.oddsApiKey || '';
+      document.getElementById('feed-interval-select').value = String(state.autoSyncSeconds);
+      updateFeedStatusUI();
+      document.getElementById('feed-modal').classList.remove('hidden');
+    }
+    function closeFeedModal() { document.getElementById('feed-modal').classList.add('hidden'); }
+    function saveFeedSettings() {
+      state.oddsApiKey = document.getElementById('feed-api-key-input').value.trim();
+      saveState();
+      state.oddsCache = null;
+      syncLiveFeeds(true, true);
+    }
+    function setAutoSyncInterval(sec) {
+      state.autoSyncSeconds = parseInt(sec, 10) || 0;
+      state.countdownRemaining = state.autoSyncSeconds;
+      saveState();
+      startAutoSyncTimer();
+    }
+    function clearOddsSnapshots() { state.snapshots = {}; saveSnapshots(); showToast('Courbes Effacées', 'Relevés réinitialisés.'); }
+    function resetVerifiedHistory() {
+      state.verifiedHistory = [];
+      state.prePredictions = {};
+      state.aiWeights = JSON.parse(JSON.stringify(DEFAULT_AI_WEIGHTS));
+      saveAuditState(); saveWeightsState(); updateAiGenBadge(); renderAccuracyTab();
+    }
+    function exportAiMemoryJson() {
+      const blob = new Blob([JSON.stringify({ aiWeights: state.aiWeights, verifiedHistory: state.verifiedHistory, paperBets: state.paperBets }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `oddsedge-ia-backup.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+    function triggerAiMemoryRestore() { document.getElementById('ai-memory-file-input')?.click(); }
+    function handleAiMemoryFile(ev) {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      const r = new FileReader();
+      r.onload = e => {
+        try {
+          const data = JSON.parse(String(e.target.result || '{}'));
+          if (data.aiWeights && typeof data.aiWeights === 'object') {
+            const w = JSON.parse(JSON.stringify(DEFAULT_AI_WEIGHTS));
+            const t = Number(data.aiWeights.temperature), g = Number(data.aiWeights.generation);
+            if (isFinite(t)) w.temperature = clamp(t, 0.75, 1.5);
+            if (isFinite(g) && g >= 1) w.generation = Math.floor(g);
+            state.aiWeights = w;
+          }
+          if (Array.isArray(data.verifiedHistory)) {
+            state.verifiedHistory = data.verifiedHistory.filter(h => h && typeof h.id === 'string' && ['1', 'N', '2'].includes(h.pickKey) &&
+              isFinite(Number(h.probPct)) && typeof h.hit === 'boolean').slice(0, 300);
+          }
+          if (Array.isArray(data.paperBets)) {
+            state.paperBets = data.paperBets.filter(b => b && b.stake > 0 && b.odds > 1 && Array.isArray(b.legs) &&
+              ['pending', 'won', 'lost', 'void'].includes(b.status)).slice(0, 50);
+          }
+          saveWeightsState(); saveAuditState(); savePaperTradingState();
+          updateAiGenBadge(); renderAccuracyTab(); renderPaperTrading();
+          showToast('Restauration Réussie', 'Données importées.');
+        } catch { showToast('Erreur', 'Fichier JSON invalide.'); }
+      };
+      r.readAsText(file);
+    }
+
+    function startAutoSyncTimer() {
+      clearInterval(window._autoSyncTicker);
+      const cdEl = document.getElementById('sync-countdown');
+      if (!state.autoSyncSeconds || state.autoSyncSeconds <= 0) { if (cdEl) cdEl.textContent = 'MAN'; return; }
+      window._autoSyncTicker = setInterval(() => {
+        updateFeedStatusUI();
+        if (document.hidden) return;
+        state.countdownRemaining--;
+        if (cdEl) cdEl.textContent = `${Math.max(0, state.countdownRemaining)}s`;
+        if (state.countdownRemaining <= 0) {
+          state.countdownRemaining = effectiveInterval() || state.autoSyncSeconds;
+          syncLiveFeeds(false);
+        }
+      }, 1000);
+    }
+
+    // iOS suspend les timers en arrière-plan : on resynchronise dès le retour au premier plan
+    function syncIfStale() {
+      const age = state.lastSyncedAt ? Date.now() - state.lastSyncedAt.getTime() : Infinity;
+      if (age > 25000) syncLiveFeeds(false);
+    }
+
+    function setupIosPwaAssets() {
+      try {
+        const cv = document.createElement('canvas');
+        const draw = size => {
+          cv.width = cv.height = size;
+          const g = cv.getContext('2d');
+          const grad = g.createLinearGradient(0, 0, size, size);
+          grad.addColorStop(0, '#22D3EE'); grad.addColorStop(0.55, '#6366F1'); grad.addColorStop(1, '#D946EF');
+          g.fillStyle = '#0B0F19'; g.fillRect(0, 0, size, size);
+          g.strokeStyle = grad; g.lineWidth = size * 0.07; g.lineCap = 'round'; g.lineJoin = 'round';
+          g.beginPath();
+          g.moveTo(size * 0.2, size * 0.68); g.lineTo(size * 0.42, size * 0.46); g.lineTo(size * 0.55, size * 0.59); g.lineTo(size * 0.8, size * 0.32);
+          g.moveTo(size * 0.62, size * 0.32); g.lineTo(size * 0.8, size * 0.32); g.lineTo(size * 0.8, size * 0.5);
+          g.stroke();
+          return cv.toDataURL('image/png');
+        };
+        const icon180 = draw(180), icon512 = draw(512);
+        document.getElementById('apple-touch-icon-link').href = icon180;
+        if (location.protocol.startsWith('http')) {
+          const manifest = {
+            name: 'OddsEdge IA', short_name: 'OddsEdge', lang: 'fr', display: 'standalone',
+            orientation: 'portrait', background_color: '#0B0F19', theme_color: '#0B0F19',
+            start_url: location.href.split('#')[0],
+            icons: [{ src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any' }]
+          };
+          document.getElementById('pwa-manifest-link').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+        }
+      } catch {}
+      if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setupIosPwaAssets();
+      loadState();
+      updateAiGenBadge();
+      document.getElementById('mode-label').textContent = state.friendlyMode ? 'Lecture Simple' : 'Afficher Cotes';
+      switchTab('matches');
+      renderPaperTrading();
+
+      // Premier affichage instantané depuis le dernier relevé, puis synchro réseau
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        if (cached?.matches?.length) {
+          MATCHES_DATA = cached.matches;
+          state.feedSource = `Cache (${cached.source})`;
+          state.lastSyncedAt = new Date(cached.ts);
+          state.offline = true;
+          state.focusedMatchId = MATCHES_DATA[0]?.id || '';
+          updateFeedStatusUI(); renderMatches(); renderSidebarSummary();
+        }
+      } catch {}
+
+      startAutoSyncTimer();
+      syncLiveFeeds(false);
+
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) syncIfStale(); });
+      window.addEventListener('pageshow', syncIfStale);
+      window.addEventListener('online', () => syncLiveFeeds(false));
+
+      // Feuilles modales : verrouillage du scroll arrière-plan + fermeture au toucher du fond
+      const lock = () => document.documentElement.classList.toggle('modal-open',
+        [...document.querySelectorAll('[id$="-modal"]')].some(el => !el.classList.contains('hidden')));
+      document.querySelectorAll('[id$="-modal"]').forEach(el => {
+        new MutationObserver(lock).observe(el, { attributes: true, attributeFilter: ['class'] });
+        el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
+      });
+    });
+  </script>
+</body>
+</html>
